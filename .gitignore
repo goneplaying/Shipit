@@ -15,3 +15,7 @@ build/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Configuration files with secrets
+Shipit/Shipit/OpenAIConfig.swift
+Shipit/Shipit/SupabaseConfig.swift
