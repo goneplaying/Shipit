@@ -452,16 +452,26 @@ struct HomeContentCarrierView: View {
     
     // Get all preview routes (thin lines for unselected shipments)
     private var previewRoutesList: [[CLLocationCoordinate2D]] {
-        shipments
-            .filter { !selectedShipments.contains($0.id) && !watchedManager.isWatched(requestId: $0.id) }
-            .compactMap { previewRoutes[$0.id] }
+        // Get all preview routes, not just from filtered shipments
+        // This ensures previously selected routes remain visible when deselected
+        previewRoutes
+            .filter { shipmentId, _ in
+                // Exclude selected and bookmarked routes (they're shown separately)
+                !selectedShipments.contains(shipmentId) && !watchedManager.isWatched(requestId: shipmentId)
+            }
+            .map { $0.value }
     }
     
     // Get all bookmarked routes (primary color, 2px width)
     private var bookmarkedRoutesList: [[CLLocationCoordinate2D]] {
-        shipments
-            .filter { watchedManager.isWatched(requestId: $0.id) && !selectedShipments.contains($0.id) }
-            .compactMap { bookmarkedRoutes[$0.id] }
+        // Get all bookmarked routes, not just from filtered shipments
+        // This ensures bookmarked routes remain visible even after deselection
+        bookmarkedRoutes
+            .filter { shipmentId, _ in
+                // Exclude selected routes (they're shown separately as thick yellow lines)
+                watchedManager.isWatched(requestId: shipmentId) && !selectedShipments.contains(shipmentId)
+            }
+            .map { $0.value }
     }
     
     // MARK: - Body Components
@@ -575,9 +585,15 @@ struct HomeContentCarrierView: View {
                         handleRemoveShipment(shipmentId: shipmentId)
                     },
                     onDismiss: {
-                        // Move selected routes back to preview routes (to show as inactive/tertiary)
+                        // Move selected routes back to appropriate collections
                         for (shipmentId, route) in shipmentRoutes {
-                            previewRoutes[shipmentId] = route
+                            if watchedManager.isWatched(requestId: shipmentId) {
+                                // Bookmarked routes go to bookmarkedRoutes (primary color, 2px)
+                                bookmarkedRoutes[shipmentId] = route
+                            } else {
+                                // Regular routes go to previewRoutes (tertiary color, thin)
+                                previewRoutes[shipmentId] = route
+                            }
                         }
                         
                         // Clear all selections
