@@ -1,0 +1,21 @@
+mutation CreateUserProfile($input: UserProfileInput!) {
+  createUserProfile(input: $input) {
+    userId
+    email
+    userType
+    selectedTab
+    firstName
+    lastName
+    companyName
+    nip
+    selectedCountry
+    streetAndNumber
+    apartmentUnit
+    postalCode
+    city
+    regionState
+    phoneNumber
+    createdAt
+    updatedAt
+  }
+}

@@ -1,0 +1,10 @@
+specVersion: 'v1alpha'
+serviceId: 'shipit-user-accounts-service'
+location: 'us-east4'
+schema:
+  source: './schema'
+datasource:
+  postgresql:
+    database: 'shipit-db'
+    cloudSql:
+      instanceId: 'shipit-instance'

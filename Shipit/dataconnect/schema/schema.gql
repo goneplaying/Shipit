@@ -1,0 +1,32 @@
+# Shipit User Accounts Schema
+# This schema defines the data model for the Shipit application
+
+type UserProfile @table(name: "user_profiles") {
+  userId: String! @col(name: "user_id", primaryKey: true)
+  email: String! @col
+  userType: Int! @col(name: "user_type") # 0 = Carrier, 1 = Shipper
+  selectedTab: Int! @col(name: "selected_tab", default: 0) # 0 = Private Person, 1 = Company
+  
+  # Private Person fields
+  firstName: String @col(name: "first_name")
+  lastName: String @col(name: "last_name")
+  
+  # Company fields
+  companyName: String @col(name: "company_name")
+  nip: String @col
+  
+  # Common address fields
+  selectedCountry: String! @col(name: "selected_country", default: "Poland")
+  streetAndNumber: String! @col(name: "street_and_number")
+  apartmentUnit: String @col(name: "apartment_unit")
+  postalCode: String! @col(name: "postal_code")
+  city: String! @col
+  regionState: String @col(name: "region_state")
+  phoneNumber: String! @col(name: "phone_number")
+  
+  createdAt: DateTime! @col(name: "created_at", default: "NOW()")
+  updatedAt: DateTime! @col(name: "updated_at", default: "NOW()")
+  
+  @index(name: "idx_user_email", columns: ["email"])
+  @index(name: "idx_user_type", columns: ["user_type"])
+}

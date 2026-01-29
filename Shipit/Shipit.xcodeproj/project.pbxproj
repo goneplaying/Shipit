@@ -1,0 +1,686 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0077F2BB2F04C32D003E96A5 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BA2F04C32D003E96A5 /* FirebaseAuth */; };
+		0077F2BD2F04C32D003E96A5 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BC2F04C32D003E96A5 /* FirebaseCore */; };
+		0077F2BE2F04C32D003E96A5 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */; };
+		0077F4012F058FF1003E96A5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4002F058FF1003E96A5 /* FirebaseAnalytics */; };
+		0077F4032F058FF1003E96A5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4022F058FF1003E96A5 /* FirebaseMessaging */; };
+		0077F4052F058FF1003E96A5 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4042F058FF1003E96A5 /* FirebaseStorage */; };
+		0077F4072F059000003E96A5 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4062F059000003E96A5 /* MapboxMaps */; };
+		00C0012C2F0C3F9B000EC6F0 /* LucideIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 00C0012B2F0C3F9B000EC6F0 /* LucideIcons */; };
+		00C0013D2F0DCCA5000EC6F0 /* OpenAISwift in Frameworks */ = {isa = PBXBuildFile; productRef = 00C0013C2F0DCCA5000EC6F0 /* OpenAISwift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0077F2852F048438003E96A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0077F26F2F048436003E96A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0077F2762F048436003E96A5;
+			remoteInfo = Shipit;
+		};
+		0077F28F2F048438003E96A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0077F26F2F048436003E96A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0077F2762F048436003E96A5;
+			remoteInfo = Shipit;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0077F2772F048436003E96A5 /* Shipit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shipit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0077F2842F048438003E96A5 /* ShipitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShipitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0077F28E2F048438003E96A5 /* ShipitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShipitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0077F2792F048436003E96A5 /* Shipit */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shipit;
+			sourceTree = "<group>";
+		};
+		0077F2872F048438003E96A5 /* ShipitTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShipitTests;
+			sourceTree = "<group>";
+		};
+		0077F2912F048438003E96A5 /* ShipitUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShipitUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0077F2742F048436003E96A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0077F2BD2F04C32D003E96A5 /* FirebaseCore in Frameworks */,
+				0077F2BB2F04C32D003E96A5 /* FirebaseAuth in Frameworks */,
+				0077F4032F058FF1003E96A5 /* FirebaseMessaging in Frameworks */,
+				0077F4012F058FF1003E96A5 /* FirebaseAnalytics in Frameworks */,
+				00C0013D2F0DCCA5000EC6F0 /* OpenAISwift in Frameworks */,
+				0077F2BE2F04C32D003E96A5 /* FirebaseFirestore in Frameworks */,
+				00C0012C2F0C3F9B000EC6F0 /* LucideIcons in Frameworks */,
+				0077F4052F058FF1003E96A5 /* FirebaseStorage in Frameworks */,
+				0077F4072F059000003E96A5 /* MapboxMaps in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F2812F048438003E96A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F28B2F048438003E96A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0077F26E2F048436003E96A5 = {
+			isa = PBXGroup;
+			children = (
+				0077F2792F048436003E96A5 /* Shipit */,
+				0077F2872F048438003E96A5 /* ShipitTests */,
+				0077F2912F048438003E96A5 /* ShipitUITests */,
+				0077F2782F048436003E96A5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0077F2782F048436003E96A5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0077F2772F048436003E96A5 /* Shipit.app */,
+				0077F2842F048438003E96A5 /* ShipitTests.xctest */,
+				0077F28E2F048438003E96A5 /* ShipitUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0077F2762F048436003E96A5 /* Shipit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0077F2982F048438003E96A5 /* Build configuration list for PBXNativeTarget "Shipit" */;
+			buildPhases = (
+				0077F2732F048436003E96A5 /* Sources */,
+				0077F2742F048436003E96A5 /* Frameworks */,
+				0077F2752F048436003E96A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0077F2792F048436003E96A5 /* Shipit */,
+			);
+			name = Shipit;
+			packageProductDependencies = (
+				0077F2BA2F04C32D003E96A5 /* FirebaseAuth */,
+				0077F2BC2F04C32D003E96A5 /* FirebaseCore */,
+				0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */,
+				0077F4002F058FF1003E96A5 /* FirebaseAnalytics */,
+				0077F4022F058FF1003E96A5 /* FirebaseMessaging */,
+				0077F4042F058FF1003E96A5 /* FirebaseStorage */,
+				0077F4062F059000003E96A5 /* MapboxMaps */,
+				00C0012B2F0C3F9B000EC6F0 /* LucideIcons */,
+				00C0013C2F0DCCA5000EC6F0 /* OpenAISwift */,
+			);
+			productName = Shipit;
+			productReference = 0077F2772F048436003E96A5 /* Shipit.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0077F2832F048438003E96A5 /* ShipitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0077F29B2F048438003E96A5 /* Build configuration list for PBXNativeTarget "ShipitTests" */;
+			buildPhases = (
+				0077F2802F048438003E96A5 /* Sources */,
+				0077F2812F048438003E96A5 /* Frameworks */,
+				0077F2822F048438003E96A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0077F2862F048438003E96A5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0077F2872F048438003E96A5 /* ShipitTests */,
+			);
+			name = ShipitTests;
+			packageProductDependencies = (
+			);
+			productName = ShipitTests;
+			productReference = 0077F2842F048438003E96A5 /* ShipitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		0077F28D2F048438003E96A5 /* ShipitUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0077F29E2F048438003E96A5 /* Build configuration list for PBXNativeTarget "ShipitUITests" */;
+			buildPhases = (
+				0077F28A2F048438003E96A5 /* Sources */,
+				0077F28B2F048438003E96A5 /* Frameworks */,
+				0077F28C2F048438003E96A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0077F2902F048438003E96A5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0077F2912F048438003E96A5 /* ShipitUITests */,
+			);
+			name = ShipitUITests;
+			packageProductDependencies = (
+			);
+			productName = ShipitUITests;
+			productReference = 0077F28E2F048438003E96A5 /* ShipitUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0077F26F2F048436003E96A5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1630;
+				LastUpgradeCheck = 1630;
+				TargetAttributes = {
+					0077F2762F048436003E96A5 = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					0077F2832F048438003E96A5 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 0077F2762F048436003E96A5;
+					};
+					0077F28D2F048438003E96A5 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 0077F2762F048436003E96A5;
+					};
+				};
+			};
+			buildConfigurationList = 0077F2722F048436003E96A5 /* Build configuration list for PBXProject "Shipit" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0077F26E2F048436003E96A5;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				0077F4082F059000003E96A5 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
+				00C0012A2F0C3EC0000EC6F0 /* XCRemoteSwiftPackageReference "lucide-icons-swift" */,
+				00C0013B2F0DCCA5000EC6F0 /* XCRemoteSwiftPackageReference "OpenAISwift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0077F2782F048436003E96A5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0077F2762F048436003E96A5 /* Shipit */,
+				0077F2832F048438003E96A5 /* ShipitTests */,
+				0077F28D2F048438003E96A5 /* ShipitUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0077F2752F048436003E96A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F2822F048438003E96A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F28C2F048438003E96A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0077F2732F048436003E96A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F2802F048438003E96A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0077F28A2F048438003E96A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0077F2862F048438003E96A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0077F2762F048436003E96A5 /* Shipit */;
+			targetProxy = 0077F2852F048438003E96A5 /* PBXContainerItemProxy */;
+		};
+		0077F2902F048438003E96A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0077F2762F048436003E96A5 /* Shipit */;
+			targetProxy = 0077F28F2F048438003E96A5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0077F2962F048438003E96A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0077F2972F048438003E96A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		0077F2992F048438003E96A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WC9G6G777B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_MBXAccessToken = "pk.eyJ1IjoiY2hyaXN0b3BoZXJ3aXJrdXMiLCJhIjoiY21qdWJqYnVhMm5reTNmc2V5a3NtemR5MiJ9.-4UTKY4b26DD8boXDC0upw";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gpg.shipit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0077F29A2F048438003E96A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WC9G6G777B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_MBXAccessToken = "pk.eyJ1IjoiY2hyaXN0b3BoZXJ3aXJrdXMiLCJhIjoiY21qdWJqYnVhMm5reTNmc2V5a3NtemR5MiJ9.-4UTKY4b26DD8boXDC0upw";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gpg.shipit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0077F29C2F048438003E96A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GPG.ShipitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shipit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shipit";
+			};
+			name = Debug;
+		};
+		0077F29D2F048438003E96A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GPG.ShipitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shipit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shipit";
+			};
+			name = Release;
+		};
+		0077F29F2F048438003E96A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GPG.ShipitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Shipit;
+			};
+			name = Debug;
+		};
+		0077F2A02F048438003E96A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GPG.ShipitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Shipit;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0077F2722F048436003E96A5 /* Build configuration list for PBXProject "Shipit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0077F2962F048438003E96A5 /* Debug */,
+				0077F2972F048438003E96A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0077F2982F048438003E96A5 /* Build configuration list for PBXNativeTarget "Shipit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0077F2992F048438003E96A5 /* Debug */,
+				0077F29A2F048438003E96A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0077F29B2F048438003E96A5 /* Build configuration list for PBXNativeTarget "ShipitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0077F29C2F048438003E96A5 /* Debug */,
+				0077F29D2F048438003E96A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0077F29E2F048438003E96A5 /* Build configuration list for PBXNativeTarget "ShipitUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0077F29F2F048438003E96A5 /* Debug */,
+				0077F2A02F048438003E96A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+		0077F4082F059000003E96A5 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-maps-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+		00C0012A2F0C3EC0000EC6F0 /* XCRemoteSwiftPackageReference "lucide-icons-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JakubMazur/lucide-icons-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.562.0;
+			};
+		};
+		00C0013B2F0DCCA5000EC6F0 /* XCRemoteSwiftPackageReference "OpenAISwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/adamrushy/OpenAISwift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0077F2BA2F04C32D003E96A5 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		0077F2BC2F04C32D003E96A5 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		0077F4002F058FF1003E96A5 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		0077F4022F058FF1003E96A5 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		0077F4042F058FF1003E96A5 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		0077F4062F059000003E96A5 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0077F4082F059000003E96A5 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */;
+			productName = MapboxMaps;
+		};
+		00C0012B2F0C3F9B000EC6F0 /* LucideIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00C0012A2F0C3EC0000EC6F0 /* XCRemoteSwiftPackageReference "lucide-icons-swift" */;
+			productName = LucideIcons;
+		};
+		00C0013C2F0DCCA5000EC6F0 /* OpenAISwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00C0013B2F0DCCA5000EC6F0 /* XCRemoteSwiftPackageReference "OpenAISwift" */;
+			productName = OpenAISwift;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0077F26F2F048436003E96A5 /* Project object */;
+}

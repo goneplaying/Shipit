@@ -1,0 +1,20 @@
+mutation UpdateUserProfile($input: UserProfileInput!) {
+  updateUserProfile(input: $input) {
+    userId
+    email
+    userType
+    selectedTab
+    firstName
+    lastName
+    companyName
+    nip
+    selectedCountry
+    streetAndNumber
+    apartmentUnit
+    postalCode
+    city
+    regionState
+    phoneNumber
+    updatedAt
+  }
+}

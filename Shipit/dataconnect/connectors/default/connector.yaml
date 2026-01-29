@@ -1,0 +1,13 @@
+connectorId: 'default'
+authentication:
+  - type: 'USER'
+schema:
+  source: '../../schema'
+queries:
+  - path: './queries'
+mutations:
+  - path: './mutations'
+sdk:
+  ios:
+    outputDir: '../../generated/ios'
+    packageName: 'com.gpg.shipit.dataconnect'

@@ -1,0 +1,191 @@
+//
+//  HomePageSelectionSheet.swift
+//  Shipit
+//
+//  Created by Assistant on 10.01.2026.
+//
+
+import SwiftUI
+import CoreLocation
+
+struct HomePageSelectionSheet: View {
+    let selectedShipments: [ShipmentData]
+    let pickupCoordinates: [String: CLLocationCoordinate2D]
+    @Binding var scrollToFirst: Bool
+    let onRemoveShipment: (String) -> Void
+    @ObservedObject private var filterSettings = FilterSettingsManager.shared
+    @ObservedObject private var locationManager = LocationManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            Text("Your selection")
+                .font(.system(size: 28, weight: .bold))
+                .padding(.horizontal, 16)
+                .padding(.top, 20)
+                .padding(.bottom, 0)
+            
+            // Horizontal scrollable cards
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(Array(selectedShipments.enumerated()), id: \.element.id) { index, shipment in
+                            cardView(for: shipment, at: index)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 0)
+                }
+                .coordinateSpace(name: "scroll")
+                .scrollTargetLayout()
+                .scrollTargetBehavior(.viewAligned)
+                .frame(height: 260)
+                .onChange(of: scrollToFirst) { oldValue, newValue in
+                    if newValue {
+                        // Scroll to first card (index 0)
+                        withAnimation {
+                            proxy.scrollTo("card-0", anchor: .leading)
+                        }
+                        // Reset trigger
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            scrollToFirst = false
+                        }
+                    }
+                }
+            }
+            
+            Spacer(minLength: 0)
+        }
+        .background(Color.white)
+        
+    }
+    
+    @ViewBuilder
+    private func cardView(for shipment: ShipmentData, at index: Int) -> some View {
+        RequestCardMap(
+            shipment: shipment,
+            onPlaceOrder: {
+                // Handle place order
+                print("Place order for shipment: \(shipment.id)")
+            },
+            sortOption: filterSettings.sortType.rawValue,
+            sortValue: getSortValue(for: shipment),
+            rangeDistance: getRangeDistance(for: shipment)
+        )
+        .id("card-\(index)")
+        .shadow(color: Color.black.opacity(0.02), radius: 2, x: 0, y: 1)
+        .frame(width: 362)
+        .overlay(
+            // Remove button
+            Button(action: {
+                onRemoveShipment(shipment.id)
+            }) {
+                LucideIcon(IconHelper.close, size: 24, color: Colors.secondary)
+                    .padding(12)
+                    .background(Color.white)
+                    .cornerRadius(12)
+
+            }
+            .padding(4),
+            alignment: .topTrailing
+        )
+    }
+    
+    private func getSortValue(for shipment: ShipmentData) -> String {
+        switch filterSettings.sortType {
+        case .distanceToPickup:
+            // Calculate distance to pickup
+            let referenceLocation: CLLocationCoordinate2D?
+            if filterSettings.useOwnLocation {
+                referenceLocation = locationManager.location?.coordinate
+            } else {
+                referenceLocation = filterSettings.selectedCityCoordinate
+            }
+            
+            if let referenceLocation = referenceLocation,
+               let pickupCoord = pickupCoordinates[shipment.id] {
+                let distance = calculateDistance(from: referenceLocation, to: pickupCoord)
+                return String(format: "%.0f km", distance)
+            }
+            return shipment.tripDistance
+            
+        case .dateOfCreation:
+            let date = parseDate(shipment.createdAt)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "dd.MM.yyyy"
+            return formatter.string(from: date)
+            
+        case .pickupDate:
+            if shipment.pickupDate.isEmpty {
+                return "Flexible"
+            }
+            let date = parseDate(shipment.pickupDate)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "dd.MM.yyyy"
+            return formatter.string(from: date)
+            
+        case .tripDistance:
+            return "\(shipment.tripDistance) \(shipment.distanceUnit)"
+        }
+    }
+    
+    private func getRangeDistance(for shipment: ShipmentData) -> Double? {
+        let referenceLocation: CLLocationCoordinate2D?
+        if filterSettings.useOwnLocation {
+            referenceLocation = locationManager.location?.coordinate
+        } else {
+            referenceLocation = filterSettings.selectedCityCoordinate
+        }
+        
+        guard let referenceLocation = referenceLocation,
+              let pickupCoord = pickupCoordinates[shipment.id] else {
+            return nil
+        }
+        
+        return calculateDistance(from: referenceLocation, to: pickupCoord)
+    }
+    
+    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
+        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
+        return fromLocation.distance(from: toLocation) / 1000.0 // Convert to km
+    }
+    
+    private func parseDate(_ dateString: String) -> Date {
+        let cleaned = dateString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else {
+            return Date.distantPast
+        }
+        
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+        
+        if let date = isoFormatter.date(from: cleaned) {
+            return date
+        }
+        
+        isoFormatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+        if let date = isoFormatter.date(from: cleaned) {
+            return date
+        }
+        
+        let simpleFormatter = DateFormatter()
+        simpleFormatter.dateFormat = "yyyy-MM-dd"
+        simpleFormatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        if let date = simpleFormatter.date(from: cleaned) {
+            return date
+        }
+        
+        return Date.distantPast
+    }
+}
+
+#Preview {
+    HomePageSelectionSheet(
+        selectedShipments: [],
+        pickupCoordinates: [:],
+        scrollToFirst: .constant(false),
+        onRemoveShipment: { _ in }
+    )
+}
