@@ -416,7 +416,10 @@ struct MapboxMapView: UIViewRepresentable {
             routeLayer.lineCap = .constant(LineCap.round)
             routeLayer.lineJoin = .constant(LineJoin.round)
             
-            if mapView.mapboxMap.layerExists(withId: previewRoutesLayerId) {
+            // Add below multiple routes layer to ensure selected routes appear on top
+            if mapView.mapboxMap.layerExists(withId: multipleRoutesLayerId) {
+                try? mapView.mapboxMap.addLayer(routeLayer, layerPosition: .below(multipleRoutesLayerId))
+            } else if mapView.mapboxMap.layerExists(withId: previewRoutesLayerId) {
                 try? mapView.mapboxMap.addLayer(routeLayer, layerPosition: .below(previewRoutesLayerId))
             } else {
                 try? mapView.mapboxMap.addLayer(routeLayer)
@@ -450,9 +453,11 @@ struct MapboxMapView: UIViewRepresentable {
             layer.lineCap = .constant(.round)
             layer.lineJoin = .constant(.round)
             
-            // Add above the base route layer to ensure it's visible on top of it
+            // Always add above the base route layer to ensure selected routes are visible on top
             if mapView.mapboxMap.layerExists(withId: routeLayerId) {
                 try? mapView.mapboxMap.addLayer(layer, layerPosition: .above(routeLayerId))
+            } else if mapView.mapboxMap.layerExists(withId: previewRoutesLayerId) {
+                try? mapView.mapboxMap.addLayer(layer, layerPosition: .above(previewRoutesLayerId))
             } else {
                 try? mapView.mapboxMap.addLayer(layer)
             }
