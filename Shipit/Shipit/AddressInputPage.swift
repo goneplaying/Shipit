@@ -75,7 +75,7 @@ struct AddressInputPage: View {
                     HapticFeedback.light()
                     dismiss()
                 }) {
-                    LucideIcon(IconHelper.chevronLeft, size: 24, color: Colors.text)
+                    LucideIcon(IconHelper.arrowLeft, size: 24, color: Colors.text)
                 }
             }
         }

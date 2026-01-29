@@ -157,16 +157,6 @@ struct HomePageSelectionSheet: View {
                     .background(Color.white)
                     .cornerRadius(10)
                 }
-                
-                // Remove button
-                Button(action: {
-                    onRemoveShipment(shipment.id)
-                }) {
-                    LucideIcon(IconHelper.close, size: 24, color: Colors.secondary)
-                        .padding(10)
-                        .background(Color.white)
-                        .cornerRadius(10)
-                }
             }
             .padding(6),
             alignment: .topTrailing
