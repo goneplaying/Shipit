@@ -81,15 +81,6 @@ struct AddressInputPage: View {
         }
         .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear {
-            // Hide tab bar icons but keep the bar visible
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let tabBar = windowScene.windows.first?.rootViewController?.view.subviews.first(where: { $0 is UITabBar }) as? UITabBar {
-                tabBar.items?.forEach { item in
-                    item.image = UIImage()
-                    item.selectedImage = UIImage()
-                }
-            }
-            
             // Request location permission and get user's coordinates
             locationManager.requestLocationPermission()
             locationManager.startUpdatingLocation()
@@ -100,8 +91,20 @@ struct AddressInputPage: View {
             }
             
             // Focus on "To" field after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 focusedField = .to
+            }
+            
+            // Hide tab bar icons asynchronously to avoid blocking UI
+            DispatchQueue.main.async {
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first,
+                   let tabBar = window.rootViewController?.tabBarController?.tabBar {
+                    tabBar.items?.forEach { item in
+                        item.image = UIImage()
+                        item.selectedImage = UIImage()
+                    }
+                }
             }
         }
         .onDisappear {
@@ -408,14 +411,15 @@ struct AddressInputField: View {
                 .frame(width: 24, height: 24)
             
             // Text field
-            TextField("", text: $text)
+            TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Colors.textSecondary))
                 .font(.system(size: 17))
                 .foregroundColor(Colors.secondary)
-                .placeholder(placeholder, when: $text, color: Colors.textSecondary)
                 .submitLabel(.search)
                 .onSubmit {
                     onSubmit?()
                 }
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
             
             // Right icon (locate/crosshair) - only for "From" field
             if showRightIcon {
@@ -426,16 +430,16 @@ struct AddressInputField: View {
                     LucideIcon(IconHelper.crosshair, size: 24, color: Colors.secondary)
                         .frame(width: 24, height: 24)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .frame(height: 48)
-        .background(Colors.backgroundQuaternary)
-        .cornerRadius(12)
+        .background(Colors.backgroundQuaternary, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isActive ? Colors.secondary : Color.clear, lineWidth: isActive ? 2 : 0)
+                .strokeBorder(isActive ? Colors.secondary : Color.clear, lineWidth: 2)
         )
     }
 }

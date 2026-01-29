@@ -242,6 +242,7 @@ struct HomeContentCarrierView: View {
     @State private var showSelectionSheet = false // Show/hide selection sheet
     @State private var scrollToFirstCard = false // Trigger to scroll to first card
     @State private var useSecondaryPOIs = false // Use secondary POI images (for address input route)
+    @State private var geocodeWorkItem: DispatchWorkItem? // Debounce geocoding calls
     
     private var shipments: [ShipmentData] {
         // If preferences are open, use cached filtered shipment IDs to avoid expensive recalculation
@@ -260,7 +261,12 @@ struct HomeContentCarrierView: View {
             // Create bounding box for quick rejection
             let routeBounds = calculateRouteBounds(simplifiedRoute, bufferKm: maxDistanceKm)
             
-            let filtered = shipmentDataManager.shipments.filter { shipment in
+            return shipmentDataManager.shipments.filter { shipment in
+                // Always show bookmarked/watched shipments regardless of distance
+                if watchedManager.isWatched(requestId: shipment.id) {
+                    return true
+                }
+                
                 guard let pickupCoord = pickupCoordinates[shipment.id] else { return false }
                 
                 // Quick bounding box check first (very fast)
@@ -272,35 +278,26 @@ struct HomeContentCarrierView: View {
                 let minDistance = minDistanceFromPointToRoute(point: pickupCoord, route: simplifiedRoute, maxDistance: maxDistanceMeters)
                 return minDistance <= maxDistanceMeters
             }
-            
-            // Cache the filtered shipment IDs
-            if !isPreferencesOpen {
-                cachedFilteredShipmentIds = Set(filtered.map { $0.id })
-            }
-            
-            return filtered
         }
         
         // Otherwise, use the standard range filter
         if filterSettings.useRange {
-            let filtered = shipmentDataManager.shipments.filter { isWithinRange(shipment: $0) }
-            
-            // Cache the filtered shipment IDs
-            if !isPreferencesOpen {
-                cachedFilteredShipmentIds = Set(filtered.map { $0.id })
+            return shipmentDataManager.shipments.filter { shipment in
+                // Always show bookmarked/watched shipments regardless of range
+                if watchedManager.isWatched(requestId: shipment.id) {
+                    return true
+                }
+                return isWithinRange(shipment: shipment)
             }
-            
-            return filtered
         }
         
-        let allShipments = shipmentDataManager.shipments
-        
-        // Cache all shipment IDs
-        if !isPreferencesOpen {
-            cachedFilteredShipmentIds = Set(allShipments.map { $0.id })
-        }
-        
-        return allShipments
+        return shipmentDataManager.shipments
+    }
+    
+    // Update cache with current filtered shipment IDs
+    private func updateFilterCache() {
+        let filtered = shipments
+        cachedFilteredShipmentIds = Set(filtered.map { $0.id })
     }
     
     private var userLocation: CLLocationCoordinate2D? {
@@ -308,11 +305,26 @@ struct HomeContentCarrierView: View {
     }
     
     // Get filtered pickup coordinates based on preferences
+    // Always include selected shipments' coordinates regardless of filters
     private var filteredPickupCoordinates: [CLLocationCoordinate2D] {
-        let coords = shipments.compactMap { shipment -> CLLocationCoordinate2D? in
-            pickupCoordinates[shipment.id]
+        var coordinateSet = Set<String>() // Track unique shipment IDs to avoid duplicates
+        var coords: [CLLocationCoordinate2D] = []
+        
+        // First, add all filtered shipments
+        for shipment in shipments {
+            if let coord = pickupCoordinates[shipment.id] {
+                coords.append(coord)
+                coordinateSet.insert(shipment.id)
+            }
         }
-        print("📍 filteredPickupCoordinates: \(coords.count) coordinates")
+        
+        // Then, add all selected shipments (if not already included)
+        for shipmentId in selectedShipments {
+            if !coordinateSet.contains(shipmentId), let coord = pickupCoordinates[shipmentId] {
+                coords.append(coord)
+            }
+        }
+        
         return coords
     }
     
@@ -421,10 +433,11 @@ struct HomeContentCarrierView: View {
     }
     
     // Get all selected shipments for the sheet - ordered by selection (last selected first)
+    // Always use unfiltered shipments to show all selected items regardless of range/filters
     private var selectedShipmentsData: [ShipmentData] {
         // Use selectionOrder to maintain order (reversed so last selected is first)
         selectionOrder.reversed().compactMap { shipmentId in
-            shipments.first { $0.id == shipmentId }
+            shipmentDataManager.shipments.first { $0.id == shipmentId }
         }
     }
     
@@ -437,32 +450,16 @@ struct HomeContentCarrierView: View {
     
     // Get all preview routes (thin lines for unselected shipments)
     private var previewRoutesList: [[CLLocationCoordinate2D]] {
-        let routes = shipments
+        shipments
             .filter { !selectedShipments.contains($0.id) && !watchedManager.isWatched(requestId: $0.id) }
-            .compactMap { shipment -> [CLLocationCoordinate2D]? in
-                if let route = previewRoutes[shipment.id] {
-                    print("   📍 Including preview route for shipment \(shipment.id): \(route.count) points")
-                    return route
-                }
-                return nil
-            }
-        print("📊 previewRoutesList: \(routes.count) routes, previewRoutes dict has \(previewRoutes.count) entries")
-        return routes
+            .compactMap { previewRoutes[$0.id] }
     }
     
     // Get all bookmarked routes (primary color, 2px width)
     private var bookmarkedRoutesList: [[CLLocationCoordinate2D]] {
-        let routes = shipments
+        shipments
             .filter { watchedManager.isWatched(requestId: $0.id) && !selectedShipments.contains($0.id) }
-            .compactMap { shipment -> [CLLocationCoordinate2D]? in
-                if let route = bookmarkedRoutes[shipment.id] {
-                    print("   📍 Including bookmarked route for shipment \(shipment.id): \(route.count) points")
-                    return route
-                }
-                return nil
-            }
-        print("📊 bookmarkedRoutesList: \(routes.count) routes, bookmarkedRoutes dict has \(bookmarkedRoutes.count) entries")
-        return routes
+            .compactMap { bookmarkedRoutes[$0.id] }
     }
     
     var body: some View {
@@ -684,6 +681,9 @@ struct HomeContentCarrierView: View {
         }
         .onDisappear {
             locationManager.stopUpdatingLocation()
+            // Cancel pending geocode work item
+            geocodeWorkItem?.cancel()
+            geocodeWorkItem = nil
             // Cancel all pending geocoding tasks to prevent memory leaks
             cancelPendingGeocodeTasks()
             // Cancel country view task
@@ -705,8 +705,18 @@ struct HomeContentCarrierView: View {
             } else if oldValue && !newValue {
                 // Preferences closed - recalculate and update cache
                 isPreferencesOpen = false
-                // Force recalculation by clearing cache
-                cachedFilteredShipmentIds.removeAll()
+                // Update cache after preferences close
+                DispatchQueue.main.async {
+                    self.updateFilterCache()
+                }
+            }
+        }
+        .onChange(of: routeCoordinates) { oldValue, newValue in
+            // Update cache when route changes (but not while preferences are open)
+            if !isPreferencesOpen {
+                DispatchQueue.main.async {
+                    self.updateFilterCache()
+                }
             }
         }
         .navigationDestination(isPresented: $showAddressInput) {
@@ -744,38 +754,44 @@ struct HomeContentCarrierView: View {
     
     // Map helper functions
     private func geocodeAllPickupLocations() {
-        print("🌍 geocodeAllPickupLocations called - \(shipmentDataManager.shipments.count) shipments")
-        for shipment in shipmentDataManager.shipments {
-            if pickupCoordinates[shipment.id] == nil {
-                geocodePickupLocation(shipment: shipment)
+        // Cancel any pending geocode work to debounce calls
+        geocodeWorkItem?.cancel()
+        
+        let workItem = DispatchWorkItem {
+            // Only geocode shipments that are currently visible (filtered) or selected/bookmarked
+            let shipmentsToGeocode = Set(self.shipments.map { $0.id })
+                .union(self.selectedShipments)
+                .union(Set(self.shipmentDataManager.shipments.filter { self.watchedManager.isWatched(requestId: $0.id) }.map { $0.id }))
+            
+            for shipment in self.shipmentDataManager.shipments where shipmentsToGeocode.contains(shipment.id) {
+                if self.pickupCoordinates[shipment.id] == nil {
+                    self.geocodePickupLocation(shipment: shipment)
+                }
+            }
+            
+            // Defer preview routes and bookmarked routes fetching to give geocoding time to complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.fetchAllPreviewRoutes()
+                self.fetchAllBookmarkedRoutes()
             }
         }
-        print("🌍 Pickup coordinates now cached: \(pickupCoordinates.count)")
         
-        // Defer preview routes and bookmarked routes fetching to give geocoding time to complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.fetchAllPreviewRoutes()
-            self.fetchAllBookmarkedRoutes()
-        }
+        geocodeWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
     }
     
     // Fetch preview routes (thin lines) for all visible unselected shipments
     private func fetchAllPreviewRoutes() {
-        print("🗺️ fetchAllPreviewRoutes called")
-        print("   Total shipments: \(shipments.count)")
-        print("   Selected shipments: \(selectedShipments.count)")
-        print("   Pickup coordinates cached: \(pickupCoordinates.count)")
+        // Only fetch for unselected, unwatched, visible shipments
+        let shipmentsToFetch = shipments.filter { 
+            !selectedShipments.contains($0.id) && 
+            !watchedManager.isWatched(requestId: $0.id) &&
+            previewRoutes[$0.id] == nil
+        }
         
-        for shipment in shipments where !selectedShipments.contains(shipment.id) {
-            if previewRoutes[shipment.id] == nil,
-               let pickupCoord = pickupCoordinates[shipment.id] {
-                print("   ➡️ Fetching preview route for shipment: \(shipment.id)")
-                // Fetch preview route for this shipment
+        for shipment in shipmentsToFetch {
+            if let pickupCoord = pickupCoordinates[shipment.id] {
                 geocodeDeliveryAndFetchPreviewRoute(shipment: shipment, pickupCoord: pickupCoord)
-            } else if previewRoutes[shipment.id] != nil {
-                print("   ✅ Preview route already exists for shipment: \(shipment.id)")
-            } else {
-                print("   ⚠️ No pickup coordinate for shipment: \(shipment.id)")
             }
         }
     }
@@ -882,21 +898,16 @@ struct HomeContentCarrierView: View {
     
     // Fetch bookmarked routes (primary color, 2px width) for all bookmarked shipments
     private func fetchAllBookmarkedRoutes() {
-        print("🔖 fetchAllBookmarkedRoutes called")
-        print("   Total shipments: \(shipments.count)")
-        print("   Bookmarked shipments: \(shipments.filter { watchedManager.isWatched(requestId: $0.id) }.count)")
-        print("   Pickup coordinates cached: \(pickupCoordinates.count)")
+        // Only fetch for bookmarked, unselected, visible shipments that don't have routes yet
+        let shipmentsToFetch = shipments.filter { 
+            watchedManager.isWatched(requestId: $0.id) &&
+            !selectedShipments.contains($0.id) &&
+            bookmarkedRoutes[$0.id] == nil
+        }
         
-        for shipment in shipments where watchedManager.isWatched(requestId: shipment.id) && !selectedShipments.contains(shipment.id) {
-            if bookmarkedRoutes[shipment.id] == nil,
-               let pickupCoord = pickupCoordinates[shipment.id] {
-                print("   ➡️ Fetching bookmarked route for shipment: \(shipment.id)")
-                // Fetch bookmarked route for this shipment
+        for shipment in shipmentsToFetch {
+            if let pickupCoord = pickupCoordinates[shipment.id] {
                 geocodeDeliveryAndFetchBookmarkedRoute(shipment: shipment, pickupCoord: pickupCoord)
-            } else if bookmarkedRoutes[shipment.id] != nil {
-                print("   ✅ Bookmarked route already exists for shipment: \(shipment.id)")
-            } else {
-                print("   ⚠️ No pickup coordinate for bookmarked shipment: \(shipment.id)")
             }
         }
     }
