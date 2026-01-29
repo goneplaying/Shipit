@@ -214,6 +214,8 @@ struct HomeContentCarrierView: View {
     @State private var showPreferencesPage = false
     @State private var showAddressInput = false
     @State private var searchText = ""
+    @State private var cachedFilteredShipmentIds: Set<String> = [] // Cache shipment IDs when preferences are open
+    @State private var isPreferencesOpen = false // Track if preferences are being edited
     
     // Map state variables
     @State private var centerCoordinate = CLLocationCoordinate2D(latitude: 52.2297, longitude: 21.0122) // Default: Warsaw, Poland
@@ -242,10 +244,63 @@ struct HomeContentCarrierView: View {
     @State private var useSecondaryPOIs = false // Use secondary POI images (for address input route)
     
     private var shipments: [ShipmentData] {
-        if filterSettings.useRange {
-            return shipmentDataManager.shipments.filter { isWithinRange(shipment: $0) }
+        // If preferences are open, use cached filtered shipment IDs to avoid expensive recalculation
+        if isPreferencesOpen && !cachedFilteredShipmentIds.isEmpty {
+            return shipmentDataManager.shipments.filter { cachedFilteredShipmentIds.contains($0.id) }
         }
-        return shipmentDataManager.shipments
+        
+        // If a trip route is set, filter by distance from the route
+        if !routeCoordinates.isEmpty {
+            let maxDistanceKm = filterSettings.sliderValue
+            let maxDistanceMeters = maxDistanceKm * 1000.0
+            
+            // Simplify route to reduce calculation time (keep every 10th point for large routes)
+            let simplifiedRoute = simplifyRoute(routeCoordinates, maxPoints: 50)
+            
+            // Create bounding box for quick rejection
+            let routeBounds = calculateRouteBounds(simplifiedRoute, bufferKm: maxDistanceKm)
+            
+            let filtered = shipmentDataManager.shipments.filter { shipment in
+                guard let pickupCoord = pickupCoordinates[shipment.id] else { return false }
+                
+                // Quick bounding box check first (very fast)
+                if !isPointInBounds(pickupCoord, bounds: routeBounds) {
+                    return false
+                }
+                
+                // Only do precise calculation if within bounding box
+                let minDistance = minDistanceFromPointToRoute(point: pickupCoord, route: simplifiedRoute, maxDistance: maxDistanceMeters)
+                return minDistance <= maxDistanceMeters
+            }
+            
+            // Cache the filtered shipment IDs
+            if !isPreferencesOpen {
+                cachedFilteredShipmentIds = Set(filtered.map { $0.id })
+            }
+            
+            return filtered
+        }
+        
+        // Otherwise, use the standard range filter
+        if filterSettings.useRange {
+            let filtered = shipmentDataManager.shipments.filter { isWithinRange(shipment: $0) }
+            
+            // Cache the filtered shipment IDs
+            if !isPreferencesOpen {
+                cachedFilteredShipmentIds = Set(filtered.map { $0.id })
+            }
+            
+            return filtered
+        }
+        
+        let allShipments = shipmentDataManager.shipments
+        
+        // Cache all shipment IDs
+        if !isPreferencesOpen {
+            cachedFilteredShipmentIds = Set(allShipments.map { $0.id })
+        }
+        
+        return allShipments
     }
     
     private var userLocation: CLLocationCoordinate2D? {
@@ -259,6 +314,110 @@ struct HomeContentCarrierView: View {
         }
         print("📍 filteredPickupCoordinates: \(coords.count) coordinates")
         return coords
+    }
+    
+    // Helper function to calculate minimum distance from a point to a route (with early termination)
+    private func minDistanceFromPointToRoute(point: CLLocationCoordinate2D, route: [CLLocationCoordinate2D], maxDistance: Double) -> Double {
+        guard !route.isEmpty else { return Double.infinity }
+        
+        var minDistance = Double.infinity
+        
+        // Check distance to each segment of the route
+        for i in 0..<route.count - 1 {
+            let segmentStart = route[i]
+            let segmentEnd = route[i + 1]
+            let distance = distanceFromPointToSegment(point: point, segmentStart: segmentStart, segmentEnd: segmentEnd)
+            minDistance = min(minDistance, distance)
+            
+            // Early termination: if we found a point within range, no need to check further
+            if minDistance <= maxDistance {
+                return minDistance
+            }
+        }
+        
+        return minDistance
+    }
+    
+    // Simplify route by keeping only every Nth point or limiting to maxPoints
+    private func simplifyRoute(_ route: [CLLocationCoordinate2D], maxPoints: Int) -> [CLLocationCoordinate2D] {
+        guard route.count > maxPoints else { return route }
+        
+        let step = route.count / maxPoints
+        var simplified: [CLLocationCoordinate2D] = []
+        
+        for i in stride(from: 0, to: route.count, by: max(1, step)) {
+            simplified.append(route[i])
+        }
+        
+        // Always include the last point
+        if let last = route.last, simplified.last != last {
+            simplified.append(last)
+        }
+        
+        return simplified
+    }
+    
+    // Calculate bounding box around the route with buffer
+    private func calculateRouteBounds(_ route: [CLLocationCoordinate2D], bufferKm: Double) -> (minLat: Double, maxLat: Double, minLon: Double, maxLon: Double) {
+        guard !route.isEmpty else {
+            return (minLat: -90, maxLat: 90, minLon: -180, maxLon: 180)
+        }
+        
+        var minLat = route[0].latitude
+        var maxLat = route[0].latitude
+        var minLon = route[0].longitude
+        var maxLon = route[0].longitude
+        
+        for coord in route {
+            minLat = min(minLat, coord.latitude)
+            maxLat = max(maxLat, coord.latitude)
+            minLon = min(minLon, coord.longitude)
+            maxLon = max(maxLon, coord.longitude)
+        }
+        
+        // Add buffer (approximate: 1 degree ≈ 111 km at equator)
+        let bufferDegrees = bufferKm / 111.0
+        minLat -= bufferDegrees
+        maxLat += bufferDegrees
+        minLon -= bufferDegrees
+        maxLon += bufferDegrees
+        
+        return (minLat: minLat, maxLat: maxLat, minLon: minLon, maxLon: maxLon)
+    }
+    
+    // Quick check if point is within bounding box
+    private func isPointInBounds(_ point: CLLocationCoordinate2D, bounds: (minLat: Double, maxLat: Double, minLon: Double, maxLon: Double)) -> Bool {
+        return point.latitude >= bounds.minLat &&
+               point.latitude <= bounds.maxLat &&
+               point.longitude >= bounds.minLon &&
+               point.longitude <= bounds.maxLon
+    }
+    
+    // Helper function to calculate distance from a point to a line segment
+    private func distanceFromPointToSegment(point: CLLocationCoordinate2D, segmentStart: CLLocationCoordinate2D, segmentEnd: CLLocationCoordinate2D) -> Double {
+        let pointLocation = CLLocation(latitude: point.latitude, longitude: point.longitude)
+        let startLocation = CLLocation(latitude: segmentStart.latitude, longitude: segmentStart.longitude)
+        let endLocation = CLLocation(latitude: segmentEnd.latitude, longitude: segmentEnd.longitude)
+        
+        // Calculate the projection of the point onto the line segment
+        let segmentLength = startLocation.distance(from: endLocation)
+        
+        if segmentLength == 0 {
+            // Start and end are the same point
+            return pointLocation.distance(from: startLocation)
+        }
+        
+        // Calculate the parameter t that represents the projection point on the segment
+        let dx = segmentEnd.longitude - segmentStart.longitude
+        let dy = segmentEnd.latitude - segmentStart.latitude
+        let t = max(0, min(1, ((point.longitude - segmentStart.longitude) * dx + (point.latitude - segmentStart.latitude) * dy) / (dx * dx + dy * dy)))
+        
+        // Calculate the projected point on the segment
+        let projectedLat = segmentStart.latitude + t * dy
+        let projectedLon = segmentStart.longitude + t * dx
+        let projectedLocation = CLLocation(latitude: projectedLat, longitude: projectedLon)
+        
+        return pointLocation.distance(from: projectedLocation)
     }
     
     // Get all selected shipments for the sheet - ordered by selection (last selected first)
@@ -538,6 +697,17 @@ struct HomeContentCarrierView: View {
         }
         .navigationDestination(isPresented: $showPreferencesPage) {
             ExchangePreferencesPage()
+        }
+        .onChange(of: showPreferencesPage) { oldValue, newValue in
+            if newValue {
+                // Preferences opened - set flag to use cached results
+                isPreferencesOpen = true
+            } else if oldValue && !newValue {
+                // Preferences closed - recalculate and update cache
+                isPreferencesOpen = false
+                // Force recalculation by clearing cache
+                cachedFilteredShipmentIds.removeAll()
+            }
         }
         .navigationDestination(isPresented: $showAddressInput) {
             AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate in
