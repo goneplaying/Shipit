@@ -641,7 +641,10 @@ struct HomeContentCarrierView: View {
                         useSecondaryPOIs = false
                         routeColor = Colors.primary.hexString()
                         showRouteSheet = false
-                        print("🗑️ Route deleted")
+                        
+                        // Clear preview routes for non-bookmarked shipments
+                        clearNonBookmarkedPreviewRoutes()
+                        print("🗑️ Route deleted and non-bookmarked preview routes cleared")
                     }
                 )
                 .frame(height: 122)
@@ -684,6 +687,10 @@ struct HomeContentCarrierView: View {
     }
     
     var body: some View {
+        contentWithModifiers
+    }
+    
+    private var contentWithModifiers: some View {
         mainContent
         .fullScreenCover(isPresented: $showHomePageShipper) {
             HomePageShipper()
@@ -793,6 +800,10 @@ struct HomeContentCarrierView: View {
                 
                 // IMPORTANT: Set this flag to ensure secondary POIs are used
                 self.useSecondaryPOIs = true
+                
+                // Clear preview routes for non-bookmarked shipments
+                self.clearNonBookmarkedPreviewRoutes()
+                print("   🧹 Cleared non-bookmarked preview routes")
                 
                 // Show route sheet
                 self.showRouteSheet = true
@@ -1559,6 +1570,12 @@ struct HomeContentCarrierView: View {
         
         // Cancel geocoding tasks
         cancelPendingGeocodeTasks()
+    }
+    
+    /// Clear preview routes for non-bookmarked shipments
+    private func clearNonBookmarkedPreviewRoutes() {
+        let bookmarkedIds = watchedManager.watchedRequestIds
+        previewRoutes = previewRoutes.filter { bookmarkedIds.contains($0.key) }
     }
 }
 
