@@ -14,34 +14,21 @@ struct HomePageSelectionSheet: View {
     @Binding var scrollToFirst: Bool
     let onRemoveShipment: (String) -> Void
     let onDismiss: (() -> Void)?
-    @EnvironmentObject var authService: AuthService
+    
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var filterSettings = FilterSettingsManager.shared
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var watchedManager = WatchedRequestsManager.shared
     @ObservedObject private var profileData = ProfileData.shared
     @State private var showCompleteProfile = false
     
-    init(
-        selectedShipments: [ShipmentData],
-        pickupCoordinates: [String: CLLocationCoordinate2D],
-        scrollToFirst: Binding<Bool>,
-        onRemoveShipment: @escaping (String) -> Void,
-        onDismiss: (() -> Void)? = nil
-    ) {
-        self.selectedShipments = selectedShipments
-        self.pickupCoordinates = pickupCoordinates
-        self._scrollToFirst = scrollToFirst
-        self.onRemoveShipment = onRemoveShipment
-        self.onDismiss = onDismiss
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header with close button
-            HStack(alignment: .center) {
+            // Header
+            HStack(alignment: .center, spacing: 0) {
                 Text("Your selection")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(Colors.text)
+                    .foregroundColor(Color(hex: "#141414"))
                     .tracking(0.38)
                 
                 Spacer()
@@ -51,17 +38,18 @@ struct HomePageSelectionSheet: View {
                     HapticFeedback.light()
                     onDismiss?()
                 }) {
-                    Circle()
-                        .fill(Colors.backgroundQuaternary)
-                        .frame(width: 40, height: 40)
-                        .overlay(
-                            LucideIcon(IconHelper.close, size: 24, color: Colors.text)
-                        )
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#F4F4F4"))
+                            .frame(width: 40, height: 40)
+                        
+                        LucideIcon(IconHelper.close, size: 24, color: Colors.text)
+                    }
                 }
+                .instantFeedback()
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
-            .padding(.bottom, 0)
             
             // Horizontal scrollable cards
             ScrollViewReader { proxy in
@@ -136,27 +124,26 @@ struct HomePageSelectionSheet: View {
         .shadow(color: Color.black.opacity(0.02), radius: 2, x: 0, y: 1)
         .frame(width: 362)
         .overlay(
-            HStack(spacing: 0) {
-                // Bookmark button
-                Button(action: {
-                    watchedManager.toggleWatched(requestId: shipment.id)
-                }) {
-                    Group {
-                        if watchedManager.isWatched(requestId: shipment.id) {
-                            Image("bookmark-filled")
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .foregroundColor(Colors.primary)
-                        } else {
-                            LucideIcon(IconHelper.bookmark, size: 24, color: Colors.secondary)
-                        }
+            // Bookmark button
+            Button(action: {
+                watchedManager.toggleWatched(requestId: shipment.id)
+            }) {
+                Group {
+                    if watchedManager.isWatched(requestId: shipment.id) {
+                        Image("bookmark-filled")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundColor(Colors.primary)
+                    } else {
+                        LucideIcon(IconHelper.bookmark, size: 24, color: Colors.secondary)
                     }
-                    .frame(width: 24, height: 24)
-                    .padding(10)
-                    .background(Color.white)
-                    .cornerRadius(10)
                 }
+                .frame(width: 24, height: 24)
+                .animation(nil, value: watchedManager.isWatched(requestId: shipment.id))
+                .padding(10)
+                .background(Color.white)
+                .cornerRadius(10)
             }
             .padding(6),
             alignment: .topTrailing

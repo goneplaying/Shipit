@@ -11,7 +11,7 @@ import CoreLocation
 import MapboxMaps
 
 struct HomePageCarrier: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileData = ProfileData.shared
     @ObservedObject private var appSettings = AppSettingsManager.shared
@@ -103,15 +103,15 @@ struct HomePageCarrier: View {
                 }
             }
             .onAppear {
-                // Load profile data from Firestore when HomePageCarrier appears
+                // Load profile data from Supabase when HomePageCarrier appears
                 Task {
                     do {
-                        try await profileData.loadFromFirestore()
+                        try await profileData.loadFromSupabase()
                         // Update email from Auth after loading
                         profileData.updateEmailFromAuth()
                     } catch {
-                        // If Firestore load fails, data will remain from UserDefaults
-                        print("Failed to load from Firestore: \(error.localizedDescription)")
+                        // If Supabase load fails, data will remain from UserDefaults
+                        print("Failed to load from Supabase: \(error.localizedDescription)")
                     }
                 }
                 
@@ -202,7 +202,7 @@ struct HomePageCarrier: View {
 
 // Separate view for Home content - Carrier version
 struct HomeContentCarrierView: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @EnvironmentObject var shipmentDataManager: ShipmentDataManager
     @ObservedObject private var profileData = ProfileData.shared
     @ObservedObject private var locationManager = LocationManager.shared
@@ -243,6 +243,8 @@ struct HomeContentCarrierView: View {
     @State private var scrollToFirstCard = false // Trigger to scroll to first card
     @State private var useSecondaryPOIs = false // Use secondary POI images (for address input route)
     @State private var geocodeWorkItem: DispatchWorkItem? // Debounce geocoding calls
+    @State private var showRouteSheet = false // Show route sheet when route is set
+    @State private var routeDistance: Double = 0 // Route distance in km
     
     private var shipments: [ShipmentData] {
         // If preferences are open, use cached filtered shipment IDs to avoid expensive recalculation
@@ -462,177 +464,215 @@ struct HomeContentCarrierView: View {
             .compactMap { bookmarkedRoutes[$0.id] }
     }
     
-    var body: some View {
-        ZStack(alignment: .top) {
-            // Overlay HomePageShipper when switching
-            if showHomePageShipper {
-                HomePageShipper()
-                    .environmentObject(authService)
-                    .environmentObject(ShipmentDataManager.shared)
-                    .zIndex(999)
-                    .transition(.identity)
+    // MARK: - Body Components
+    
+    
+    private var mapView: some View {
+        MapboxMapView(
+            centerCoordinate: $centerCoordinate,
+            zoomLevel: $zoomLevel,
+            routeCoordinates: $routeCoordinates,
+            routeColor: $routeColor,
+            userLocation: userLocation,
+            startCoordinate: useSecondaryPOIs ? startCoordinate : nil,
+            useSecondaryPOI: useSecondaryPOIs,
+            allPickupCoordinates: filteredPickupCoordinates,
+            multipleRoutes: multipleRoutes,
+            previewRoutes: previewRoutesList,
+            bookmarkedRoutes: bookmarkedRoutesList,
+            onPickupMarkerTapped: { tappedCoordinate in
+                handlePickupMarkerTap(coordinate: tappedCoordinate)
             }
-            
-            ZStack {
-            // Map in background
-            MapboxMapView(
-                centerCoordinate: $centerCoordinate,
-                zoomLevel: $zoomLevel,
-                routeCoordinates: $routeCoordinates,
-                routeColor: $routeColor,
-                userLocation: userLocation,
-                startCoordinate: useSecondaryPOIs ? startCoordinate : nil,
-                useSecondaryPOI: useSecondaryPOIs,
-                allPickupCoordinates: filteredPickupCoordinates,
-                multipleRoutes: multipleRoutes,
-                previewRoutes: previewRoutesList,
-                bookmarkedRoutes: bookmarkedRoutesList,
-                onPickupMarkerTapped: { tappedCoordinate in
-                    handlePickupMarkerTap(coordinate: tappedCoordinate)
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .ignoresSafeArea()
-            
-            // 2nd layer: HomePageCarrierSheet (top buttons)
-            VStack {
-                // Control buttons at top
-                HStack {
-                    Button(action: {
-                        HapticFeedback.light()
-                        // Save that shipper is now the active homepage
-                        appSettings.setLastActiveHomePage(.shipper)
-                        var transaction = Transaction()
-                        transaction.disablesAnimations = true
-                        withTransaction(transaction) {
-                            showHomePageShipper = true
-                        }
-                    }) {
-                        LucideIcon(IconHelper.truck, size: 24, color: .black)
-                            .frame(width: 24, height: 24)
-                            .padding(6)
-                            .frame(width: 44, height: 44)
-                            .background(Colors.primary)
-                            .cornerRadius(30)
-                            .clipped()
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+    }
+    
+    private var topButtonsLayer: some View {
+        VStack {
+            // Control buttons at top
+            HStack {
+                Button(action: {
+                    HapticFeedback.light()
+                    appSettings.setLastActiveHomePage(.shipper)
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        showHomePageShipper = true
                     }
-                    .buttonStyle(.plain)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        HapticFeedback.light()
-                        showPreferencesPage = true
-                    }) {
-                        LucideIcon(IconHelper.settings2, size: 24, color: .white)
-                            .frame(width: 24, height: 24)
-                            .padding(6)
-                            .frame(width: 44, height: 44)
-                            .background(Colors.secondary)
-                            .cornerRadius(30)
-                            .clipped()
-                    }
-                    .buttonStyle(.plain)
+                }) {
+                    LucideIcon(IconHelper.truck, size: 24, color: .black)
+                        .frame(width: 24, height: 24)
+                        .padding(6)
+                        .frame(width: 44, height: 44)
+                        .background(Colors.primary)
+                        .cornerRadius(30)
+                        .clipped()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                
-                // Locate me button
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        HapticFeedback.light()
-                        if let location = locationManager.location {
-                            centerCoordinate = location.coordinate
-                            zoomLevel = 12
-                        }
-                    }) {
-                        LucideIcon(IconHelper.crosshair, size: 24, color: .white)
-                            .frame(width: 24, height: 24)
-                            .padding(6)
-                            .frame(width: 44, height: 44)
-                            .background(Colors.secondary)
-                            .cornerRadius(30)
-                            .clipped()
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .buttonStyle(.plain)
+                .instantFeedback()
                 
                 Spacer()
-            }
-            .allowsHitTesting(true)
-            
-            // 3rd layer: HomePageSelectionSheet (above map, below tab bar automatically)
-            if showSelectionSheet {
-                VStack {
-                    Spacer()
-                    
-                    HomePageSelectionSheet(
-                        selectedShipments: selectedShipmentsData,
-                        pickupCoordinates: pickupCoordinates,
-                        scrollToFirst: $scrollToFirstCard,
-                        onRemoveShipment: { shipmentId in
-                            handleRemoveShipment(shipmentId: shipmentId)
-                        },
-                        onDismiss: {
-                            // Capture selected IDs before clearing
-                            let selectedIds = Array(selectedShipments)
-                            
-                            // Clear selections and dismiss immediately without animation
-                            selectedShipments.removeAll()
-                            selectionOrder.removeAll()
-                            showSelectionSheet = false
-                            
-                            // Clear all shipment routes
-                            shipmentRoutes.removeAll()
-                            
-                            // Restore preview or bookmarked routes for deselected shipments
-                            for shipmentId in selectedIds {
-                                if let pickupCoord = pickupCoordinates[shipmentId],
-                                   let shipment = shipments.first(where: { $0.id == shipmentId }) {
-                                    if watchedManager.isWatched(requestId: shipmentId) {
-                                        geocodeDeliveryAndFetchBookmarkedRoute(shipment: shipment, pickupCoord: pickupCoord)
-                                    } else {
-                                        geocodeDeliveryAndFetchPreviewRoute(shipment: shipment, pickupCoord: pickupCoord)
-                                    }
-                                }
-                            }
-                            
-                            // Cancel all pending route tasks
-                            for (_, task) in pendingRouteTasks {
-                                task.cancel()
-                            }
-                            pendingRouteTasks.removeAll()
-                        }
-                    )
-                    .environmentObject(authService)
-                    .frame(height: 420)
-                    .background(Color.white)
-                    .cornerRadius(20, corners: [.topLeft, .topRight])
-                    .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
+                
+                Button(action: {
+                    HapticFeedback.light()
+                    showPreferencesPage = true
+                }) {
+                    LucideIcon(IconHelper.settings2, size: 24, color: .white)
+                        .frame(width: 24, height: 24)
+                        .padding(6)
+                        .frame(width: 44, height: 44)
+                        .background(Colors.secondary)
+                        .cornerRadius(30)
+                        .clipped()
                 }
-                .offset(y: 28)
-                .ignoresSafeArea(edges: .bottom)
+                .buttonStyle(.plain)
+                .instantFeedback()
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
             
-            // 1st layer (top/front): Bottom Toolbar - Hide when routes are selected
-            if selectedShipments.isEmpty {
-                VStack {
-                    Spacer()
-                    
-                    HomePageCarrierSheet(
-                        searchText: $searchText,
-                        onSearchTapped: {
+            // Locate me button
+            HStack {
+                Spacer()
+                Button(action: {
+                    HapticFeedback.light()
+                    if let location = locationManager.location {
+                        centerCoordinate = location.coordinate
+                        zoomLevel = 12
+                    }
+                }) {
+                    LucideIcon(IconHelper.crosshair, size: 24, color: .white)
+                        .frame(width: 24, height: 24)
+                        .padding(6)
+                        .frame(width: 44, height: 44)
+                        .background(Colors.secondary)
+                        .cornerRadius(30)
+                        .clipped()
+                }
+                .buttonStyle(.plain)
+                .instantFeedback()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            
+            Spacer()
+        }
+        .allowsHitTesting(true)
+    }
+    
+    @ViewBuilder
+    private var selectionSheet: some View {
+        if showSelectionSheet {
+            VStack {
+                Spacer()
+                
+                HomePageSelectionSheet(
+                    selectedShipments: selectedShipmentsData,
+                    pickupCoordinates: pickupCoordinates,
+                    scrollToFirst: $scrollToFirstCard,
+                    onRemoveShipment: { shipmentId in
+                        handleRemoveShipment(shipmentId: shipmentId)
+                    },
+                    onDismiss: {
+                        // Move selected routes back to preview routes (to show as inactive/tertiary)
+                        for (shipmentId, route) in shipmentRoutes {
+                            previewRoutes[shipmentId] = route
+                        }
+                        
+                        // Clear all selections
+                        selectedShipments.removeAll()
+                        selectionOrder.removeAll()
+                        showSelectionSheet = false
+                        shipmentRoutes.removeAll()
+                        selectedShipmentId = nil
+                    }
+                )
+                .environmentObject(authService)
+                .frame(height: 420)
+                .background(Color.white)
+                .cornerRadius(20, corners: [.topLeft, .topRight])
+                .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
+            }
+            .offset(y: 28)
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+    
+    @ViewBuilder
+    private var routeSheet: some View {
+        if showRouteSheet {
+            VStack {
+                
+                
+                HomePageRouteSheet(
+                    isPresented: $showRouteSheet,
+                    fromCity: startLocation.isEmpty ? "Start" : startLocation,
+                    toCity: destinationLocation.isEmpty ? "Destination" : destinationLocation,
+                    distance: String(format: "%.0f", routeDistance),
+                    onEditRoute: {
+                        showRouteSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             showAddressInput = true
                         }
-                    )
-                    .cornerRadius(20, corners: [.topLeft, .topRight])
-                    .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
-                }
-                .allowsHitTesting(true)
+                    },
+                    onDeleteRoute: {
+                        routeCoordinates = []
+                        startCoordinate = nil
+                        startLocation = ""
+                        destinationLocation = ""
+                        routeDistance = 0
+                        useSecondaryPOIs = false
+                        routeColor = Colors.primary.hexString()
+                        showRouteSheet = false
+                        print("🗑️ Route deleted")
+                    }
+                )
+                .frame(height: 122)
+                .background(Color.white)
+                .cornerRadius(20, corners: [.topLeft, .topRight])
+                .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
             }
+            .offset(y: 304)
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+    
+    @ViewBuilder
+    private var bottomToolbar: some View {
+        if selectedShipments.isEmpty && !showRouteSheet {
+            VStack {
+                Spacer()
+                
+                HomePageCarrierSheet(
+                    searchText: $searchText,
+                    onSearchTapped: {
+                        showAddressInput = true
+                    }
+                )
+                .cornerRadius(20, corners: [.topLeft, .topRight])
+                .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
+            }
+            .allowsHitTesting(true)
+        }
+    }
+    
+    private var mainContent: some View {
+        ZStack {
+            mapView
+            topButtonsLayer
+            routeSheet
+            selectionSheet
+            bottomToolbar
+        }
+    }
+    
+    var body: some View {
+        mainContent
+        .fullScreenCover(isPresented: $showHomePageShipper) {
+            HomePageShipper()
+                .environmentObject(authService)
+                .environmentObject(ShipmentDataManager.shared)
         }
         .onAppear {
             print("🎬 HomePageCarrier.onAppear")
@@ -720,17 +760,26 @@ struct HomeContentCarrierView: View {
             }
         }
         .navigationDestination(isPresented: $showAddressInput) {
-            AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate in
+            AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
                 print("🗺️ onRouteCalculated callback - Setting route with \(routeCoordinates.count) points")
                 print("   📍 Start coordinate: (\(startCoordinate.latitude), \(startCoordinate.longitude))")
+                print("   📏 Distance: \(String(format: "%.1f", distance)) km")
                 
                 // Set route coordinates, start coordinate, and color
                 self.routeCoordinates = routeCoordinates
                 self.startCoordinate = startCoordinate
                 self.routeColor = Colors.secondary.hexString()
                 
+                // Store city names and distance
+                self.startLocation = fromCity
+                self.destinationLocation = toCity
+                self.routeDistance = distance
+                
                 // IMPORTANT: Set this flag to ensure secondary POIs are used
                 self.useSecondaryPOIs = true
+                
+                // Show route sheet
+                self.showRouteSheet = true
                 
                 print("   ✅ Set routeCoordinates, startCoordinate, routeColor, and useSecondaryPOIs = true")
                 
@@ -748,7 +797,6 @@ struct HomeContentCarrierView: View {
                 startCoordinate = nil
                 routeColor = Colors.primary.hexString()
             }
-        }
         }
     }
     
@@ -1498,29 +1546,8 @@ struct HomeContentCarrierView: View {
     }
 }
 
-// Extension for corner radius on specific corners
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
-    }
-}
-
 #Preview {
     HomePageCarrier()
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
         .environmentObject(ShipmentDataManager.shared)
 }

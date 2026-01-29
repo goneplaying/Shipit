@@ -17,7 +17,7 @@ struct AddressInputPage: View {
     @State private var isGeocodingLocation = false
     @State private var isCalculatingRoute = false
     @FocusState private var focusedField: Field?
-    var onRouteCalculated: (([CLLocationCoordinate2D], CLLocationCoordinate2D) -> Void)? // Route coordinates and start coordinate
+    var onRouteCalculated: (([CLLocationCoordinate2D], CLLocationCoordinate2D, String, String, Double) -> Void)? // Route coordinates, start coordinate, from city, to city, distance
     
     enum Field {
         case from, to
@@ -42,6 +42,9 @@ struct AddressInputPage: View {
                     }
                 )
                 .focused($focusedField, equals: .from)
+                .autocorrectionDisabled(false)
+                .textInputAutocapitalization(.words)
+                .keyboardType(.default)
                 
                 // To input field
                 AddressInputField(
@@ -55,6 +58,9 @@ struct AddressInputPage: View {
                     }
                 )
                 .focused($focusedField, equals: .to)
+                .autocorrectionDisabled(false)
+                .textInputAutocapitalization(.words)
+                .keyboardType(.default)
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -63,6 +69,7 @@ struct AddressInputPage: View {
         }
         .background(Colors.background)
         .scrollDismissesKeyboard(.never)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .onTapGesture {
             // Prevent tapping outside from dismissing keyboard
         }
@@ -75,12 +82,22 @@ struct AddressInputPage: View {
                     HapticFeedback.light()
                     dismiss()
                 }) {
-                    LucideIcon(IconHelper.arrowLeft, size: 24, color: Colors.text)
+                    LucideIcon(IconHelper.chevronLeft, size: 24, color: Colors.text)
                 }
+                .instantFeedback()
             }
         }
         .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear {
+            // Hide tab bar icons but keep the bar visible
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let tabBar = windowScene.windows.first?.rootViewController?.view.subviews.first(where: { $0 is UITabBar }) as? UITabBar {
+                tabBar.items?.forEach { item in
+                    item.image = UIImage()
+                    item.selectedImage = UIImage()
+                }
+            }
+            
             // Request location permission and get user's coordinates
             locationManager.requestLocationPermission()
             locationManager.startUpdatingLocation()
@@ -94,20 +111,10 @@ struct AddressInputPage: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 focusedField = .to
             }
-            
-            // Hide tab bar icons asynchronously to avoid blocking UI
-            DispatchQueue.main.async {
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = windowScene.windows.first,
-                   let tabBar = window.rootViewController?.tabBarController?.tabBar {
-                    tabBar.items?.forEach { item in
-                        item.image = UIImage()
-                        item.selectedImage = UIImage()
-                    }
-                }
-            }
         }
         .onDisappear {
+            // Clear focus to dismiss keyboard
+            focusedField = nil
             // Restore tab bar icons when leaving the page
             // Note: The actual icons will be restored by the HomePageCarrier's onAppear
         }
@@ -253,6 +260,10 @@ struct AddressInputPage: View {
                                 return
                             }
                             
+                            // Get distance from route (in meters, convert to km)
+                            let distanceMeters = firstRoute["distance"] as? Double ?? 0
+                            let distanceKm = distanceMeters / 1000.0
+                            
                             // Convert coordinates to CLLocationCoordinate2D
                             let routeCoords = coordinates.compactMap { coord -> CLLocationCoordinate2D? in
                                 guard coord.count >= 2 else { return nil }
@@ -261,12 +272,40 @@ struct AddressInputPage: View {
                             
                             print("✅ Route calculated from 'Your location' to '\(self.toAddress)': \(routeCoords.count) points")
                             print("   📍 Start coordinate: (\(startCoord.latitude), \(startCoord.longitude))")
+                            print("   📏 Distance: \(String(format: "%.1f", distanceKm)) km")
                             
-                            // Pass route and start coordinate back to HomePageCarrier
-                            self.onRouteCalculated?(routeCoords, startCoord)
-                            
-                            // Dismiss the page
-                            self.dismiss()
+                            // Reverse geocode "Your location" to get actual city name
+                            if self.fromAddress == "Your location" {
+                                let geocoder = CLGeocoder()
+                                let location = CLLocation(latitude: startCoord.latitude, longitude: startCoord.longitude)
+                                
+                                geocoder.reverseGeocodeLocation(location) { placemarks, error in
+                                    DispatchQueue.main.async {
+                                        var fromCity = "Your location"
+                                        
+                                        if let placemark = placemarks?.first {
+                                            // Try to get city name from placemark
+                                            if let city = placemark.locality {
+                                                fromCity = city
+                                            } else if let administrativeArea = placemark.administrativeArea {
+                                                fromCity = administrativeArea
+                                            }
+                                        }
+                                        
+                                        // Pass route data back to HomePageCarrier
+                                        self.onRouteCalculated?(routeCoords, startCoord, fromCity, self.toAddress, distanceKm)
+                                        
+                                        // Dismiss the page
+                                        self.dismiss()
+                                    }
+                                }
+                            } else {
+                                // Pass route data back to HomePageCarrier
+                                self.onRouteCalculated?(routeCoords, startCoord, self.fromAddress, self.toAddress, distanceKm)
+                                
+                                // Dismiss the page
+                                self.dismiss()
+                            }
                             
                         } catch {
                             print("❌ JSON parsing error: \(error.localizedDescription)")
@@ -367,6 +406,10 @@ struct AddressInputPage: View {
                                 return
                             }
                             
+                            // Get distance from route (in meters, convert to km)
+                            let distanceMeters = firstRoute["distance"] as? Double ?? 0
+                            let distanceKm = distanceMeters / 1000.0
+                            
                             // Convert coordinates to CLLocationCoordinate2D
                             let routeCoords = coordinates.compactMap { coord -> CLLocationCoordinate2D? in
                                 guard coord.count >= 2 else { return nil }
@@ -375,9 +418,10 @@ struct AddressInputPage: View {
                             
                             print("✅ Route calculated from '\(fromAddress)' to '\(toAddress)': \(routeCoords.count) points")
                             print("   📍 Start coordinate: (\(startCoord.latitude), \(startCoord.longitude))")
+                            print("   📏 Distance: \(String(format: "%.1f", distanceKm)) km")
                             
-                            // Pass route and start coordinate back to HomePageCarrier
-                            onRouteCalculated?(routeCoords, startCoord)
+                            // Pass route data back to HomePageCarrier
+                            onRouteCalculated?(routeCoords, startCoord, fromAddress, toAddress, distanceKm)
                             
                             // Dismiss the page
                             dismiss()
@@ -411,15 +455,14 @@ struct AddressInputField: View {
                 .frame(width: 24, height: 24)
             
             // Text field
-            TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Colors.textSecondary))
+            TextField("", text: $text)
                 .font(.system(size: 17))
                 .foregroundColor(Colors.secondary)
+                .placeholder(placeholder, when: $text, color: Colors.textSecondary)
                 .submitLabel(.search)
                 .onSubmit {
                     onSubmit?()
                 }
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
             
             // Right icon (locate/crosshair) - only for "From" field
             if showRightIcon {
@@ -430,16 +473,16 @@ struct AddressInputField: View {
                     LucideIcon(IconHelper.crosshair, size: 24, color: Colors.secondary)
                         .frame(width: 24, height: 24)
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .frame(height: 48)
-        .background(Colors.backgroundQuaternary, in: RoundedRectangle(cornerRadius: 12))
+        .background(Colors.backgroundQuaternary)
+        .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(isActive ? Colors.secondary : Color.clear, lineWidth: 2)
+                .stroke(isActive ? Colors.secondary : Color.clear, lineWidth: isActive ? 2 : 0)
         )
     }
 }

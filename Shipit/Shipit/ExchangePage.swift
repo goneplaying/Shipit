@@ -11,7 +11,7 @@ import Foundation
 
 struct ExchangePage: View {
     @EnvironmentObject var shipmentDataManager: ShipmentDataManager
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var watchedManager = WatchedRequestsManager.shared
     @ObservedObject private var filterSettings = FilterSettingsManager.shared

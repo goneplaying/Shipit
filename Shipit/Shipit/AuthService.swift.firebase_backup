@@ -8,13 +8,17 @@
 import Foundation
 import FirebaseAuth
 import FirebaseCore
+import UIKit
 
 class AuthService: ObservableObject {
+    static let shared = AuthService()
+    
     @Published var user: FirebaseAuth.User?
     @Published var isLoading = false
     @Published var errorMessage: String?
     
     private var authStateListener: AuthStateDidChangeListenerHandle?
+    private let phoneAuthUIDelegate = PhoneAuthUIDelegate()
     
     init() {
         // Listen for authentication state changes
@@ -124,5 +128,76 @@ class AuthService: ObservableObject {
     func logout() throws {
         try Auth.auth().signOut()
         self.user = nil
+    }
+    
+    // MARK: - Phone Authentication
+    
+    // Send verification code to phone number
+    func sendVerificationCode(phoneNumber: String, completion: @escaping (String?, Error?) -> Void) {
+        print("📱 [DEBUG] AuthService: Sending verification code to: \(phoneNumber)")
+        
+        DispatchQueue.main.async {
+            self.isLoading = true
+            self.errorMessage = nil
+        }
+        
+        // Use the persistent UI delegate for reCAPTCHA presentation
+        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: phoneAuthUIDelegate) { verificationID, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if let error = error {
+                    print("❌ [ERROR] AuthService: Verification failed - \(error.localizedDescription)")
+                    
+                    // Check if it's a reCAPTCHA related error
+                    let errorCode = (error as NSError).code
+                    if errorCode == 17999 {
+                        print("⚠️ [DEBUG] Error code 17999 - This usually means reCAPTCHA is being used")
+                        print("💡 [DEBUG] Possible reasons:")
+                        print("   1. Running in Simulator (APNs doesn't work)")
+                        print("   2. Push Notifications capability not enabled")
+                        print("   3. APNs not configured in Firebase Console")
+                        print("   4. Notification permissions denied by user")
+                    }
+                    
+                    self.errorMessage = error.localizedDescription
+                    completion(nil, error)
+                    return
+                }
+                
+                print("✅ [DEBUG] AuthService: Verification code sent successfully")
+                print("🔑 [DEBUG] Verification ID: \(verificationID ?? "nil")")
+                completion(verificationID, nil)
+            }
+        }
+    }
+    
+    // Verify phone code and sign in
+    func verifyPhoneCode(verificationID: String, code: String, completion: @escaping (Bool, String?) -> Void) {
+        DispatchQueue.main.async {
+            self.isLoading = true
+            self.errorMessage = nil
+        }
+        
+        let credential = PhoneAuthProvider.provider().credential(
+            withVerificationID: verificationID,
+            verificationCode: code
+        )
+        
+        Auth.auth().signIn(with: credential) { authResult, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if let error = error {
+                    self.errorMessage = error.localizedDescription
+                    completion(false, error.localizedDescription)
+                    return
+                }
+                
+                // User is now signed in
+                self.user = authResult?.user
+                completion(true, nil)
+            }
+        }
     }
 }

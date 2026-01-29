@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 
 struct HomePageShipper: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileData = ProfileData.shared
     @ObservedObject private var appSettings = AppSettingsManager.shared
@@ -95,15 +95,15 @@ struct HomePageShipper: View {
                 }
             }
             .onAppear {
-                // Load profile data from Firestore when HomePageShipper appears
+                // Load profile data from Supabase when HomePageShipper appears
                 Task {
                     do {
-                        try await profileData.loadFromFirestore()
+                        try await profileData.loadFromSupabase()
                         // Update email from Auth after loading
                         profileData.updateEmailFromAuth()
                     } catch {
-                        // If Firestore load fails, data will remain from UserDefaults
-                        print("Failed to load from Firestore: \(error.localizedDescription)")
+                        // If Supabase load fails, data will remain from UserDefaults
+                        print("Failed to load from Supabase: \(error.localizedDescription)")
                     }
                 }
                 
@@ -196,7 +196,7 @@ struct HomePageShipper: View {
 
 // Separate view for Home content - Shipper version
 struct HomeContentView: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @EnvironmentObject var shipmentDataManager: ShipmentDataManager
     @ObservedObject private var profileData = ProfileData.shared
     @ObservedObject private var locationManager = LocationManager.shared
@@ -232,17 +232,7 @@ struct HomeContentView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // Overlay HomePageCarrier when switching
-            if showHomePageCarrier {
-                HomePageCarrier()
-                    .environmentObject(authService)
-                    .environmentObject(ShipmentDataManager.shared)
-                    .zIndex(999)
-                    .transition(.identity)
-            }
-            
-            ZStack {
+        ZStack {
             // Map in background
             MapboxMapView(
                 centerCoordinate: $centerCoordinate,
@@ -299,6 +289,11 @@ struct HomeContentView: View {
                 Spacer()
             }
         }
+        .fullScreenCover(isPresented: $showHomePageCarrier) {
+            HomePageCarrier()
+                .environmentObject(authService)
+                .environmentObject(ShipmentDataManager.shared)
+        }
         .onAppear {
             locationManager.requestLocationPermission()
             locationManager.startUpdatingLocation()
@@ -320,7 +315,6 @@ struct HomeContentView: View {
         }
         .navigationDestination(isPresented: $showNewRequestPage) {
             NewRequestPage()
-        }
         }
     }
     
@@ -473,6 +467,6 @@ struct HomeContentView: View {
 
 #Preview {
     HomePageShipper()
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
         .environmentObject(ShipmentDataManager.shared)
 }

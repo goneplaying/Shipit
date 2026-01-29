@@ -146,7 +146,7 @@ struct UserDetailsPage: View {
                                 .padding(.leading, 4)
                         }
                         
-                        // Email field (read-only from Firebase Auth)
+                        // Email field (read-only from Supabase Auth)
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("Login Email")
@@ -169,7 +169,7 @@ struct UserDetailsPage: View {
                     
                     // Save Button
                     Button(action: {
-                        // Update email from Firebase Auth before saving
+                        // Update email from Supabase Auth before saving
                         profileData.updateEmailFromAuth()
                         
                         // Save profile data to Firestore
@@ -219,11 +219,11 @@ struct UserDetailsPage: View {
             Text(saveErrorMessage)
         }
         .onAppear {
-            // Update email from Firebase Auth when view appears
+            // Update email from Supabase Auth when view appears
             profileData.updateEmailFromAuth()
             // Load profile data from Firestore
             Task {
-                try? await profileData.loadFromFirestore()
+                try? await profileData.loadFromSupabase()
             }
             // Reset scroll position and title display mode
             titleDisplayMode = .large

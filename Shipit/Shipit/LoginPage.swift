@@ -9,14 +9,14 @@ import SwiftUI
 import UIKit
 
 struct LoginPage: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var appSettings = AppSettingsManager.shared
     
     @State private var email = ""
     @State private var password = ""
     @State private var isPasswordVisible = false
-    @State private var showFirebaseErrorAlert = false
-    @State private var firebaseErrorMessage = ""
+    @State private var showAuthErrorAlert = false
+    @State private var authErrorMessage = ""
     @State private var showUserNotFoundAlert = false
     @State private var showPasswordResetAlert = false
     @State private var showPasswordResetSuccessAlert = false
@@ -106,8 +106,8 @@ struct LoginPage: View {
                                         try await authService.resetPassword(email: email.trimmingCharacters(in: .whitespaces))
                                         showPasswordResetSuccessAlert = true
                                     } catch {
-                                        firebaseErrorMessage = error.localizedDescription
-                                        showFirebaseErrorAlert = true
+                                        authErrorMessage = error.localizedDescription
+                                        showAuthErrorAlert = true
                                     }
                                 }
                             }
@@ -123,7 +123,7 @@ struct LoginPage: View {
                         Button(action: {
                             Task {
                                 do {
-                                    try await authService.login(
+                                    try await authService.signIn(
                                         email: email.trimmingCharacters(in: .whitespaces),
                                         password: password
                                     )
@@ -135,9 +135,9 @@ struct LoginPage: View {
                                         // User does not exist
                                         showUserNotFoundAlert = true
                                     } else {
-                                        // Handle other Firebase errors
-                                        firebaseErrorMessage = error.localizedDescription
-                                        showFirebaseErrorAlert = true
+                                        // Handle other Auth errors
+                                        authErrorMessage = error.localizedDescription
+                                        showAuthErrorAlert = true
                                     }
                                 }
                             }
@@ -190,10 +190,10 @@ struct LoginPage: View {
             } message: {
                 Text("No account found with this email address. Please check your email or register for a new account.")
             }
-            .alert("Login Error", isPresented: $showFirebaseErrorAlert) {
+            .alert("Login Error", isPresented: $showAuthErrorAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(firebaseErrorMessage)
+                Text(authErrorMessage)
             }
             .alert("Email Required", isPresented: $showPasswordResetAlert) {
                 Button("OK", role: .cancel) { }
@@ -218,5 +218,5 @@ struct LoginPage: View {
 
 #Preview {
     LoginPage()
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
 }

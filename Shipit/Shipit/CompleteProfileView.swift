@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CompleteProfileView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var profileData = ProfileData.shared
     var onComplete: (() -> Void)?
     @Binding var isPresented: Bool
@@ -203,7 +203,7 @@ struct CompleteProfileView: View {
                                     .padding(.leading, 4)
                             }
                             
-                            // Email field (read-only from Firebase Auth)
+                            // Email field (read-only from Supabase Auth)
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Text("Login Email")
@@ -241,7 +241,7 @@ struct CompleteProfileView: View {
                 Text(saveErrorMessage)
             }
             .onAppear {
-                // Update email from Firebase Auth when view appears
+                // Update email from Supabase Auth when view appears
                 profileData.updateEmailFromAuth()
             }
         }
@@ -250,7 +250,7 @@ struct CompleteProfileView: View {
     private func saveProfile() {
         // Check if profile is complete before saving
         if profileData.isProfileComplete() {
-            // Update email from Firebase Auth before saving
+            // Update email from Supabase Auth before saving
             profileData.updateEmailFromAuth()
             
             // Save profile data
@@ -317,5 +317,5 @@ struct FormField: View {
 
 #Preview {
     CompleteProfileView(isPresented: .constant(true))
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
 }

@@ -15,7 +15,7 @@ enum MenuDestination: Hashable {
 }
 
 struct MenuPage: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var profileData = ProfileData.shared
     @State private var showLogoutConfirmation = false
     @State private var titleDisplayMode: NavigationBarItem.TitleDisplayMode = .large
@@ -168,11 +168,13 @@ struct MenuPage: View {
         .alert("Logout", isPresented: $showLogoutConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Logout", role: .destructive) {
-                do {
-                    try authService.logout()
-                    // HomePageShipper/HomePageCarrier will handle dismissal when user logs out
-                } catch {
-                    // Handle logout error if needed
+                Task {
+                    do {
+                        try await authService.signOut()
+                        // HomePageShipper/HomePageCarrier will handle dismissal when user logs out
+                    } catch {
+                        // Handle logout error if needed
+                    }
                 }
             }
         } message: {
@@ -195,5 +197,5 @@ struct MenuPage: View {
 
 #Preview {
     MenuPage()
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
 }

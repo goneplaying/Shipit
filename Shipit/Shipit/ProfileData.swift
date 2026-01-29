@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import FirebaseAuth
-import FirebaseFirestore
+import Supabase
 
 class ProfileData: ObservableObject {
-    @Published var selectedTab: Int = 0 // 0 = Private Person, 1 = Company
+    @Published var selectedTab: Int = -1 // -1 = Not selected, 0 = Shipper, 1 = Carrier
     @Published var userType: Int = 0 // 0 = Carrier, 1 = Shipper
+    @Published var hasCompletedWelcome: Bool = false // Track if user selected role in WelcomePage
     @Published var showExchangeAndJobs: Bool = false // Controls visibility of Exchange and Jobs tabs
     
     // Private Person fields
@@ -31,82 +31,128 @@ class ProfileData: ObservableObject {
     @Published var regionState: String = ""
     @Published var phonePrefix: String = "+48" // Phone country prefix
     @Published var phoneNumber: String = ""
-    @Published var email: String = "" // Login email from Firebase Auth
+    @Published var email: String = "" // Login email from Supabase Auth
     
     static let shared = ProfileData()
     
     // Flag to prevent multiple concurrent loads
-    private var isLoadingFromFirestore = false
+    private var isLoadingFromSupabase = false
     
     private init() {
+        // TEMP: Uncomment to test WelcomePage
+        // UserDefaults.standard.set(false, forKey: "profile_hasCompletedWelcome")
+        
         loadFromUserDefaults()
     }
     
     func save() async throws {
-        // Save to UserDefaults for local persistence FIRST (before Firestore)
-        // This ensures data is stored locally even if Firestore save fails
+        // Save to UserDefaults for local persistence FIRST (before Supabase)
+        // This ensures data is stored locally even if Supabase save fails
         saveToUserDefaults()
         
-        // Save to Firebase Firestore
-        guard let userId = Auth.auth().currentUser?.uid else {
+        // Save to Supabase
+        guard let userId = await SupabaseAuthService.shared.user?.id.uuidString else {
             // Even if user is not authenticated, we've saved to UserDefaults
             // Throw error but data is still stored locally
             throw NSError(domain: "ProfileData", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
         }
         
-        let db = Firestore.firestore()
-        let userRef = db.collection("Shipit User Accounts").document(userId)
+        struct ProfileRecord: Codable {
+            let id: String
+            let selectedTab: Int
+            let firstName: String
+            let lastName: String
+            let companyName: String
+            let nip: String
+            let selectedCountry: String
+            let streetAndNumber: String
+            let apartmentUnit: String
+            let postalCode: String
+            let city: String
+            let regionState: String
+            let phonePrefix: String
+            let phoneNumber: String
+            let email: String
+            let userType: Int
+            let updatedAt: Date
+        }
         
-        let profileData: [String: Any] = [
-            "selectedTab": selectedTab,
-            "firstName": firstName,
-            "lastName": lastName,
-            "companyName": companyName,
-            "nip": nip,
-            "selectedCountry": selectedCountry,
-            "streetAndNumber": streetAndNumber,
-            "apartmentUnit": apartmentUnit,
-            "postalCode": postalCode,
-            "city": city,
-            "regionState": regionState,
-            "phonePrefix": phonePrefix,
-            "phoneNumber": phoneNumber,
-            "email": email,
-            "userType": userType,
-            "updatedAt": FieldValue.serverTimestamp()
-        ]
+        let profileRecord = ProfileRecord(
+            id: userId,
+            selectedTab: selectedTab,
+            firstName: firstName,
+            lastName: lastName,
+            companyName: companyName,
+            nip: nip,
+            selectedCountry: selectedCountry,
+            streetAndNumber: streetAndNumber,
+            apartmentUnit: apartmentUnit,
+            postalCode: postalCode,
+            city: city,
+            regionState: regionState,
+            phonePrefix: phonePrefix,
+            phoneNumber: phoneNumber,
+            email: email,
+            userType: userType,
+            updatedAt: Date()
+        )
         
         do {
-            try await userRef.setData(profileData, merge: true)
-            print("✅ ProfileData saved to Firestore successfully")
+            try await SupabaseAuthService.shared.client
+                .from("profiles")
+                .upsert(profileRecord)
+                .execute()
+            
+            print("✅ ProfileData saved to Supabase successfully")
         } catch {
-            print("⚠️ ProfileData Firestore save failed: \(error.localizedDescription)")
+            print("⚠️ ProfileData Supabase save failed: \(error.localizedDescription)")
             // Re-throw the error, but UserDefaults data is already saved
             throw error
         }
     }
     
-    func loadFromFirestore() async throws {
+    func loadFromSupabase() async throws {
         // Prevent multiple concurrent loads
-        guard !isLoadingFromFirestore else {
+        guard !isLoadingFromSupabase else {
             return
         }
         
-        guard let userId = Auth.auth().currentUser?.uid else {
+        guard let userId = await SupabaseAuthService.shared.user?.id.uuidString else {
             return
         }
         
-        isLoadingFromFirestore = true
+        isLoadingFromSupabase = true
         defer {
-            isLoadingFromFirestore = false
+            isLoadingFromSupabase = false
         }
         
-        let db = Firestore.firestore()
-        let userRef = db.collection("Shipit User Accounts").document(userId)
+        struct ProfileRecord: Codable {
+            let id: String
+            let selectedTab: Int?
+            let firstName: String?
+            let lastName: String?
+            let companyName: String?
+            let nip: String?
+            let selectedCountry: String?
+            let streetAndNumber: String?
+            let apartmentUnit: String?
+            let postalCode: String?
+            let city: String?
+            let regionState: String?
+            let phonePrefix: String?
+            let phoneNumber: String?
+            let email: String?
+            let userType: Int?
+        }
         
-        let document = try await userRef.getDocument()
+        let response: [ProfileRecord] = try await SupabaseAuthService.shared.client
+            .from("profiles")
+            .select()
+            .eq("id", value: userId)
+            .execute()
+            .value
         
-        guard document.exists, let data = document.data() else {
+        guard let data = response.first else {
             return
         }
         
@@ -130,22 +176,22 @@ class ProfileData: ObservableObject {
                 userType: userType
             )
             
-            // Update values from Firestore
-            selectedTab = data["selectedTab"] as? Int ?? 0
-            firstName = data["firstName"] as? String ?? ""
-            lastName = data["lastName"] as? String ?? ""
-            companyName = data["companyName"] as? String ?? ""
-            nip = data["nip"] as? String ?? ""
-            selectedCountry = data["selectedCountry"] as? String ?? "Poland"
-            streetAndNumber = data["streetAndNumber"] as? String ?? ""
-            apartmentUnit = data["apartmentUnit"] as? String ?? ""
-            postalCode = data["postalCode"] as? String ?? ""
-            city = data["city"] as? String ?? ""
-            regionState = data["regionState"] as? String ?? ""
-            phonePrefix = data["phonePrefix"] as? String ?? "+48"
-            phoneNumber = data["phoneNumber"] as? String ?? ""
-            email = data["email"] as? String ?? ""
-            userType = data["userType"] as? Int ?? 0
+            // Update values from Supabase
+            selectedTab = data.selectedTab ?? 0
+            firstName = data.firstName ?? ""
+            lastName = data.lastName ?? ""
+            companyName = data.companyName ?? ""
+            nip = data.nip ?? ""
+            selectedCountry = data.selectedCountry ?? "Poland"
+            streetAndNumber = data.streetAndNumber ?? ""
+            apartmentUnit = data.apartmentUnit ?? ""
+            postalCode = data.postalCode ?? ""
+            city = data.city ?? ""
+            regionState = data.regionState ?? ""
+            phonePrefix = data.phonePrefix ?? "+48"
+            phoneNumber = data.phoneNumber ?? ""
+            email = data.email ?? ""
+            userType = data.userType ?? 0
             
             // Only save to UserDefaults if data actually changed
             let hasChanged = oldValues.selectedTab != selectedTab ||
@@ -172,6 +218,7 @@ class ProfileData: ObservableObject {
     
     private func saveToUserDefaults() {
         // Batch all UserDefaults writes together
+        UserDefaults.standard.set(hasCompletedWelcome, forKey: "profile_hasCompletedWelcome")
         UserDefaults.standard.set(selectedTab, forKey: "profile_selectedTab")
         UserDefaults.standard.set(userType, forKey: "profile_userType")
         UserDefaults.standard.set(firstName, forKey: "profile_firstName")
@@ -206,13 +253,26 @@ class ProfileData: ObservableObject {
     }
     
     func updateEmailFromAuth() {
-        if let user = Auth.auth().currentUser, let userEmail = user.email {
-            email = userEmail
+        Task { @MainActor in
+            if let user = SupabaseAuthService.shared.user, let userEmail = user.email {
+                await MainActor.run {
+                    email = userEmail
+                }
+            }
         }
     }
     
     private func loadFromUserDefaults() {
-        selectedTab = UserDefaults.standard.integer(forKey: "profile_selectedTab")
+        // Check if user has completed welcome first
+        hasCompletedWelcome = UserDefaults.standard.bool(forKey: "profile_hasCompletedWelcome")
+        
+        // Only load selectedTab if welcome is completed, otherwise keep default -1
+        if hasCompletedWelcome {
+            selectedTab = UserDefaults.standard.integer(forKey: "profile_selectedTab")
+        } else {
+            selectedTab = -1
+        }
+        
         userType = UserDefaults.standard.integer(forKey: "profile_userType")
         showExchangeAndJobs = UserDefaults.standard.bool(forKey: "showExchangeAndJobs")
         firstName = UserDefaults.standard.string(forKey: "profile_firstName") ?? ""
@@ -239,7 +299,7 @@ class ProfileData: ObservableObject {
         print("   city: \(city)")
         print("   phoneNumber: \(phoneNumber)")
         
-        // Update email from Firebase Auth if available
+        // Update email from Supabase Auth if available
         updateEmailFromAuth()
     }
     

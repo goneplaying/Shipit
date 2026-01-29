@@ -7,12 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0077F2BB2F04C32D003E96A5 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BA2F04C32D003E96A5 /* FirebaseAuth */; };
-		0077F2BD2F04C32D003E96A5 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BC2F04C32D003E96A5 /* FirebaseCore */; };
-		0077F2BE2F04C32D003E96A5 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */; };
-		0077F4012F058FF1003E96A5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4002F058FF1003E96A5 /* FirebaseAnalytics */; };
-		0077F4032F058FF1003E96A5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4022F058FF1003E96A5 /* FirebaseMessaging */; };
-		0077F4052F058FF1003E96A5 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4042F058FF1003E96A5 /* FirebaseStorage */; };
+		00055F8E2F2BB70D009EFF8F /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 00055F8D2F2BB70D009EFF8F /* Supabase */; };
 		0077F4072F059000003E96A5 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 0077F4062F059000003E96A5 /* MapboxMaps */; };
 		00C0012C2F0C3F9B000EC6F0 /* LucideIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 00C0012B2F0C3F9B000EC6F0 /* LucideIcons */; };
 		00C0013D2F0DCCA5000EC6F0 /* OpenAISwift in Frameworks */ = {isa = PBXBuildFile; productRef = 00C0013C2F0DCCA5000EC6F0 /* OpenAISwift */; };
@@ -41,9 +36,22 @@
 		0077F28E2F048438003E96A5 /* ShipitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShipitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		00055F802F2B697F009EFF8F /* Exceptions for "Shipit" folder in "Shipit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0077F2762F048436003E96A5 /* Shipit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0077F2792F048436003E96A5 /* Shipit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				00055F802F2B697F009EFF8F /* Exceptions for "Shipit" folder in "Shipit" target */,
+			);
 			path = Shipit;
 			sourceTree = "<group>";
 		};
@@ -64,14 +72,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0077F2BD2F04C32D003E96A5 /* FirebaseCore in Frameworks */,
-				0077F2BB2F04C32D003E96A5 /* FirebaseAuth in Frameworks */,
-				0077F4032F058FF1003E96A5 /* FirebaseMessaging in Frameworks */,
-				0077F4012F058FF1003E96A5 /* FirebaseAnalytics in Frameworks */,
 				00C0013D2F0DCCA5000EC6F0 /* OpenAISwift in Frameworks */,
-				0077F2BE2F04C32D003E96A5 /* FirebaseFirestore in Frameworks */,
 				00C0012C2F0C3F9B000EC6F0 /* LucideIcons in Frameworks */,
-				0077F4052F058FF1003E96A5 /* FirebaseStorage in Frameworks */,
+				00055F8E2F2BB70D009EFF8F /* Supabase in Frameworks */,
 				0077F4072F059000003E96A5 /* MapboxMaps in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -133,15 +136,10 @@
 			);
 			name = Shipit;
 			packageProductDependencies = (
-				0077F2BA2F04C32D003E96A5 /* FirebaseAuth */,
-				0077F2BC2F04C32D003E96A5 /* FirebaseCore */,
-				0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */,
-				0077F4002F058FF1003E96A5 /* FirebaseAnalytics */,
-				0077F4022F058FF1003E96A5 /* FirebaseMessaging */,
-				0077F4042F058FF1003E96A5 /* FirebaseStorage */,
 				0077F4062F059000003E96A5 /* MapboxMaps */,
 				00C0012B2F0C3F9B000EC6F0 /* LucideIcons */,
 				00C0013C2F0DCCA5000EC6F0 /* OpenAISwift */,
+				00055F8D2F2BB70D009EFF8F /* Supabase */,
 			);
 			productName = Shipit;
 			productReference = 0077F2772F048436003E96A5 /* Shipit.app */;
@@ -226,10 +224,10 @@
 			mainGroup = 0077F26E2F048436003E96A5;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				0077F4082F059000003E96A5 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
 				00C0012A2F0C3EC0000EC6F0 /* XCRemoteSwiftPackageReference "lucide-icons-swift" */,
 				00C0013B2F0DCCA5000EC6F0 /* XCRemoteSwiftPackageReference "OpenAISwift" */,
+				00055F8C2F2BB70D009EFF8F /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0077F2782F048436003E96A5 /* Products */;
@@ -429,11 +427,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Shipit/Shipit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = WC9G6G777B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Shipit/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				INFOPLIST_KEY_MBXAccessToken = "pk.eyJ1IjoiY2hyaXN0b3BoZXJ3aXJrdXMiLCJhIjoiY21qdWJqYnVhMm5reTNmc2V5a3NtemR5MiJ9.-4UTKY4b26DD8boXDC0upw";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
@@ -442,8 +442,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -462,11 +461,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Shipit/Shipit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = WC9G6G777B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Shipit/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				INFOPLIST_KEY_MBXAccessToken = "pk.eyJ1IjoiY2hyaXN0b3BoZXJ3aXJrdXMiLCJhIjoiY21qdWJqYnVhMm5reTNmc2V5a3NtemR5MiJ9.-4UTKY4b26DD8boXDC0upw";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Shipit needs your location to show your position on the map and help with shipment tracking.";
@@ -475,8 +476,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -600,12 +600,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		00055F8C2F2BB70D009EFF8F /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			repositoryURL = "https://github.com/supabase/supabase-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 12.8.0;
+				minimumVersion = 2.5.1;
 			};
 		};
 		0077F4082F059000003E96A5 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
@@ -635,35 +635,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0077F2BA2F04C32D003E96A5 /* FirebaseAuth */ = {
+		00055F8D2F2BB70D009EFF8F /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		0077F2BC2F04C32D003E96A5 /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-		0077F2BF2F04C32D003E96A5 /* FirebaseFirestore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
-		};
-		0077F4002F058FF1003E96A5 /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
-		};
-		0077F4022F058FF1003E96A5 /* FirebaseMessaging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseMessaging;
-		};
-		0077F4042F058FF1003E96A5 /* FirebaseStorage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0077F2B52F04BEB2003E96A5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseStorage;
+			package = 00055F8C2F2BB70D009EFF8F /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 		0077F4062F059000003E96A5 /* MapboxMaps */ = {
 			isa = XCSwiftPackageProductDependency;

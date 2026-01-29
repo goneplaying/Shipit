@@ -10,7 +10,7 @@ import UIKit
 import Foundation
 
 struct RegisterPage: View {
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     
     @State private var email = ""
     @State private var password = ""
@@ -22,8 +22,8 @@ struct RegisterPage: View {
     @State private var showPasswordLengthAlert = false
     @State private var showInvalidEmailAlert = false
     @State private var showTermsLink = false
-    @State private var showFirebaseErrorAlert = false
-    @State private var firebaseErrorMessage = ""
+    @State private var showAuthErrorAlert = false
+    @State private var authErrorMessage = ""
     @State private var showUserExistsAlert = false
     @State private var showRegistrationConfirmation = false
     @State private var showLoginPage = false
@@ -164,10 +164,10 @@ struct RegisterPage: View {
                                 return
                             }
                             
-                            // All validations passed - handle register with Firebase
+                            // All validations passed - handle register with Auth
                             Task {
                                 do {
-                                    try await authService.register(
+                                    try await authService.signUp(
                                         email: email.trimmingCharacters(in: .whitespaces),
                                         password: password
                                     )
@@ -179,9 +179,9 @@ struct RegisterPage: View {
                                         // User already exists
                                         showUserExistsAlert = true
                                     } else {
-                                        // Handle other Firebase errors
-                                        firebaseErrorMessage = error.localizedDescription
-                                        showFirebaseErrorAlert = true
+                                        // Handle other Auth errors
+                                        authErrorMessage = error.localizedDescription
+                                        showAuthErrorAlert = true
                                     }
                                 }
                             }
@@ -259,10 +259,10 @@ struct RegisterPage: View {
             } message: {
                 Text("An account with this email address already exists. Please use a different email or try logging in.")
             }
-            .alert("Registration Error", isPresented: $showFirebaseErrorAlert) {
+            .alert("Registration Error", isPresented: $showAuthErrorAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(firebaseErrorMessage)
+                Text(authErrorMessage)
             }
             .sheet(isPresented: $showTermsLink) {
                 TermsConditionsView()
@@ -280,5 +280,5 @@ struct RegisterPage: View {
 
 #Preview {
     RegisterPage()
-        .environmentObject(AuthService())
+        .environmentObject(SupabaseAuthService.shared)
 }

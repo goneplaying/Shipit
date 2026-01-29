@@ -13,7 +13,7 @@ struct ShipmentDetailsPage: View {
     let shipment: ShipmentData
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var shipmentDataManager: ShipmentDataManager
-    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var authService: SupabaseAuthService
     @ObservedObject private var watchedManager = WatchedRequestsManager.shared
     @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var filterSettings = FilterSettingsManager.shared
