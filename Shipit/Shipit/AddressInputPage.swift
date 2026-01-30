@@ -12,12 +12,18 @@ import MapboxMaps
 struct AddressInputPage: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var locationManager = LocationManager.shared
-    @State private var fromAddress: String = ""
-    @State private var toAddress: String = ""
+    @State private var fromAddress: String
+    @State private var toAddress: String
     @State private var isGeocodingLocation = false
     @State private var isCalculatingRoute = false
     @FocusState private var focusedField: Field?
     var onRouteCalculated: (([CLLocationCoordinate2D], CLLocationCoordinate2D, String, String, Double) -> Void)? // Route coordinates, start coordinate, from city, to city, distance
+    
+    init(initialFrom: String = "", initialTo: String = "", onRouteCalculated: (([CLLocationCoordinate2D], CLLocationCoordinate2D, String, String, Double) -> Void)?) {
+        _fromAddress = State(initialValue: initialFrom)
+        _toAddress = State(initialValue: initialTo)
+        self.onRouteCalculated = onRouteCalculated
+    }
     
     enum Field {
         case from, to
@@ -42,8 +48,9 @@ struct AddressInputPage: View {
                     }
                 )
                 .focused($focusedField, equals: .from)
-                .autocorrectionDisabled(false)
+                .autocorrectionDisabled(true)
                 .textInputAutocapitalization(.words)
+                .textContentType(.none)
                 .keyboardType(.default)
                 
                 // To input field
@@ -51,15 +58,20 @@ struct AddressInputPage: View {
                     placeholder: "Choose destination",
                     text: $toAddress,
                     leftIcon: IconHelper.search,
-                    showRightIcon: false,
+                    showRightIcon: !toAddress.isEmpty,
+                    rightIconName: IconHelper.close,
                     isActive: focusedField == .to,
+                    onRightIconTap: {
+                        toAddress = ""
+                    },
                     onSubmit: {
                         calculateRoute()
                     }
                 )
                 .focused($focusedField, equals: .to)
-                .autocorrectionDisabled(false)
+                .autocorrectionDisabled(true)
                 .textInputAutocapitalization(.words)
+                .textContentType(.none)
                 .keyboardType(.default)
             }
             .padding(.horizontal, 16)
@@ -102,8 +114,8 @@ struct AddressInputPage: View {
             locationManager.requestLocationPermission()
             locationManager.startUpdatingLocation()
             
-            // Fill from address with "Your location"
-            if locationManager.location != nil {
+            // Fill from address with "Your location" only if empty
+            if fromAddress.isEmpty, locationManager.location != nil {
                 fromAddress = "Your location"
             }
             
@@ -450,6 +462,7 @@ struct AddressInputField: View {
     @Binding var text: String
     let leftIcon: String
     let showRightIcon: Bool
+    var rightIconName: String = IconHelper.crosshair
     var isActive: Bool = false
     var onRightIconTap: (() -> Void)? = nil
     var onSubmit: (() -> Void)? = nil
@@ -470,13 +483,13 @@ struct AddressInputField: View {
                     onSubmit?()
                 }
             
-            // Right icon (locate/crosshair) - only for "From" field
+            // Right icon - can be crosshair (locate) or close (clear)
             if showRightIcon {
                 Button(action: {
                     HapticFeedback.light()
                     onRightIconTap?()
                 }) {
-                    LucideIcon(IconHelper.crosshair, size: 24, color: Colors.secondary)
+                    LucideIcon(rightIconName, size: 24, color: Colors.secondary)
                         .frame(width: 24, height: 24)
                 }
             }
@@ -495,6 +508,6 @@ struct AddressInputField: View {
 
 #Preview {
     NavigationStack {
-        AddressInputPage(onRouteCalculated: nil)
+        AddressInputPage(initialFrom: "", initialTo: "", onRouteCalculated: nil)
     }
 }

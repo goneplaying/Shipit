@@ -87,6 +87,7 @@ struct LucideIcon: View {
         case "home": return Lucide.house
         case "map": return Lucide.map
         case "refresh-cw": return Lucide.refreshCw
+        case "arrow-right-left": return Lucide.arrowRightLeft
         case "briefcase": return Lucide.briefcase
         case "package": return Lucide.package
         case "arrow-up-down": return Lucide.arrowUpDown
@@ -138,6 +139,7 @@ struct LucideIcon: View {
             "home": "house.fill",
             "map": "map.fill",
             "refresh-cw": "arrow.triangle.2.circlepath",
+            "arrow-right-left": "arrow.left.arrow.right",
             "briefcase": "briefcase.fill",
             "package": "shippingbox.fill",
             "arrow-up-down": "arrow.up.arrow.down",
@@ -242,6 +244,7 @@ struct LucideIcon: View {
         case "home": return Lucide.house
         case "map": return Lucide.map
         case "refresh-cw": return Lucide.refreshCw
+        case "arrow-right-left": return Lucide.arrowRightLeft
         case "briefcase": return Lucide.briefcase
         case "package": return Lucide.package
         case "arrow-up-down": return Lucide.arrowUpDown
@@ -313,6 +316,7 @@ struct LucideIcon: View {
             "home": "house.fill",
             "map": "map.fill",
             "refresh-cw": "arrow.triangle.2.circlepath",
+            "arrow-right-left": "arrow.left.arrow.right",
             "briefcase": "briefcase.fill",
             "package": "shippingbox.fill",
             "arrow-up-down": "arrow.up.arrow.down",

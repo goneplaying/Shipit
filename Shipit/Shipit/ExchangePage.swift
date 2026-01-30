@@ -655,13 +655,6 @@ struct ExchangePage: View {
         .navigationTitle("Exchange")
         .navigationBarTitleDisplayMode(titleDisplayMode)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                // Map Icon - Navigate to ExchangeMap
-                NavigationLink(destination: ExchangeMapPage()) {
-                    LucideIcon(IconHelper.map, size: 24, color: Colors.text)
-                }
-            }
-            
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 16) {
                     // Sort Icon - Navigate to ExchangeSortingPage

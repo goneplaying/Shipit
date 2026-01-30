@@ -31,7 +31,7 @@ struct IconHelper {
     // Additional Lucide icons used in the app
     static let home = "home"
     static let map = "map"
-    static let exchange = "refresh-cw"
+    static let exchange = "arrow-right-left"
     static let jobs = "briefcase"
     static let shipments = "package"
     static let profile = "user"

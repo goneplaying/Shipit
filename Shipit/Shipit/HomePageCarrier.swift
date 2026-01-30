@@ -213,6 +213,7 @@ struct HomeContentCarrierView: View {
     @State private var showHomePageShipper = false
     @State private var showPreferencesPage = false
     @State private var showAddressInput = false
+    @State private var editingRoute = false
     @State private var searchText = ""
     @State private var cachedFilteredShipmentIds: Set<String> = [] // Cache shipment IDs when preferences are open
     @State private var isPreferencesOpen = false // Track if preferences are being edited
@@ -635,10 +636,7 @@ struct HomeContentCarrierView: View {
                     toCity: destinationLocation.isEmpty ? "Destination" : destinationLocation,
                     distance: String(format: "%.0f", routeDistance),
                     onEditRoute: {
-                        showRouteSheet = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showAddressInput = true
-                        }
+                        editingRoute = true
                     },
                     onDeleteRoute: {
                         routeCoordinates = []
@@ -678,6 +676,7 @@ struct HomeContentCarrierView: View {
             }
             .offset(y: 304)
             .ignoresSafeArea(edges: .bottom)
+            .animation(nil, value: editingRoute)
         }
     }
     
@@ -727,6 +726,49 @@ struct HomeContentCarrierView: View {
             .navigationDestination(isPresented: $showAddressInput, destination: addressInputDestination)
             .onChange(of: showAddressInput) { oldValue, newValue in
                 handleAddressInputDismiss(oldValue: oldValue, newValue: newValue)
+            }
+            .sheet(isPresented: $editingRoute) {
+                NavigationStack {
+                    AddressInputPage(
+                        initialFrom: startLocation,
+                        initialTo: destinationLocation,
+                        onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
+                            // Clear all selections immediately to prevent POIs from briefly showing as active
+                            self.selectedShipments.removeAll()
+                            self.selectionOrder.removeAll()
+                            self.shipmentRoutes.removeAll()
+                            self.selectedShipmentId = nil
+                            
+                            // Clear preview routes for non-bookmarked shipments
+                            // This removes POIs that were only visible along the old route
+                            self.clearNonBookmarkedPreviewRoutes()
+                            print("🧹 Cleared non-bookmarked preview routes from old route")
+                            
+                            // Update the route with new data
+                            self.routeCoordinates = routeCoordinates
+                            self.startCoordinate = startCoordinate
+                            self.routeColor = Colors.secondary.hexString()
+                            self.startLocation = fromCity
+                            self.destinationLocation = toCity
+                            self.routeDistance = distance
+                            self.useSecondaryPOIs = true
+                            
+                            print("✅ Route updated: \(fromCity) → \(toCity), \(String(format: "%.1f", distance)) km")
+                            
+                            // Regenerate preview routes for shipments along the new route
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                print("🔄 Regenerating preview routes for new route")
+                                self.fetchAllPreviewRoutes()
+                                self.fetchAllBookmarkedRoutes()
+                            }
+                            
+                            // Dismiss edit sheet
+                            editingRoute = false
+                        }
+                    )
+                }
+                .presentationDragIndicator(.hidden)
+                .interactiveDismissDisabled()
             }
     }
     
@@ -824,7 +866,7 @@ struct HomeContentCarrierView: View {
     
     @ViewBuilder
     private func addressInputDestination() -> some View {
-        AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
+        AddressInputPage(initialFrom: "", initialTo: "", onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
             print("🗺️ onRouteCalculated callback - Setting route with \(routeCoordinates.count) points")
             print("   📍 Start coordinate: (\(startCoordinate.latitude), \(startCoordinate.longitude))")
             print("   📏 Distance: \(String(format: "%.1f", distance)) km")
