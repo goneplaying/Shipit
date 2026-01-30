@@ -642,10 +642,16 @@ struct HomeContentCarrierView: View {
                         routeColor = Colors.primary.hexString()
                         showRouteSheet = false
                         
+                        // Clear all selections immediately to prevent POIs from briefly showing as active
+                        selectedShipments.removeAll()
+                        selectionOrder.removeAll()
+                        shipmentRoutes.removeAll()
+                        selectedShipmentId = nil
+                        
                         // Clear preview routes for non-bookmarked shipments
                         // This removes POIs that were only visible along the route
                         clearNonBookmarkedPreviewRoutes()
-                        print("🧹 Cleared non-bookmarked preview routes")
+                        print("🧹 Cleared non-bookmarked preview routes and selections")
                         
                         // Regenerate preview routes for shipments within range after a brief delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -815,6 +821,12 @@ struct HomeContentCarrierView: View {
             print("   📍 Start coordinate: (\(startCoordinate.latitude), \(startCoordinate.longitude))")
             print("   📏 Distance: \(String(format: "%.1f", distance)) km")
             
+            // Clear all selections immediately to prevent POIs from briefly showing as active
+            self.selectedShipments.removeAll()
+            self.selectionOrder.removeAll()
+            self.shipmentRoutes.removeAll()
+            self.selectedShipmentId = nil
+            
             // Set route coordinates, start coordinate, and color
             self.routeCoordinates = routeCoordinates
             self.startCoordinate = startCoordinate
@@ -830,7 +842,7 @@ struct HomeContentCarrierView: View {
             
             // Clear preview routes for non-bookmarked shipments
             self.clearNonBookmarkedPreviewRoutes()
-            print("   🧹 Cleared non-bookmarked preview routes")
+            print("   🧹 Cleared non-bookmarked preview routes and selections")
             
             // Show route sheet
             self.showRouteSheet = true

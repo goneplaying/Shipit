@@ -1,7 +1,7 @@
 # POI State After Route Deletion Fix
 
 ## Issue
-After closing a trip route (X button on HomePageRouteSheet), POIs were appearing as "active" (primary/yellow color) when they should appear as "not active" (tertiary/gray color).
+After closing a trip route (X button on HomePageRouteSheet) or creating a new route, POIs were briefly flashing as "active" (primary/yellow color) when they should appear as "not active" (tertiary/gray color).
 
 ## Expected Behavior
 
@@ -18,44 +18,57 @@ After closing a trip route (X button on HomePageRouteSheet), POIs were appearing
 1. **App start**: POIs appear as tertiary (not active) ✅
 2. **Tap POI**: It becomes active/primary (yellow) ✅
 3. **Setup route**: New POIs appear with their routes ✅
-4. **Close route** (X button): POIs should appear as **tertiary (not active)** ❌ → Was showing active
+4. **Close route** (X button): POIs should appear as **tertiary (not active)** ❌ → Was briefly showing active
+5. **Create new route**: POIs should appear as **tertiary (not active)** ❌ → Was briefly showing active
 
 ## Root Cause
 
-When the trip route was deleted via the X button on HomePageRouteSheet:
+When the trip route was deleted or a new route was created:
 1. Route coordinates were cleared ✅
-2. `useSecondaryPOIs` was set to false ✅
-3. `routeColor` was reset to primary ✅
-4. **But old preview routes were NOT cleared** ❌
-5. **New preview routes were NOT regenerated** ❌
+2. `useSecondaryPOIs` was set appropriately ✅
+3. `routeColor` was reset/set ✅
+4. **But `selectedShipments` were NOT cleared immediately** ❌
+5. Preview routes were cleared/regenerated with a 0.3s delay ✅
 
-Without clearing and regenerating:
-- POIs that were along the route stayed visible (they shouldn't be)
-- POIs appeared without proper styling (missing tertiary color)
-- The app should switch to range-based filtering, but old route-based POIs remained
-- Preview routes (with tertiary POIs) were stale and incorrect
+The problem:
+- During the 0.3 second delay before preview routes regenerate
+- Any POIs in `selectedShipments` would still render as "selected" (active/primary)
+- This caused the brief yellow flash as POIs transitioned from selected → preview
+- Same issue occurred when creating a new route - old selections persisted
+
+Without clearing selections immediately:
+- POIs that were previously tapped (selected) stayed in `selectedShipments`
+- MapboxMapView renders selected POIs with `poi-start-primary` (yellow/active)
+- During the delay, these POIs appeared active before becoming tertiary
+- Users saw a confusing yellow flash
 
 ## Solution Applied ✅
 
-### Clear Old Routes and Regenerate for Range Filter
+### Clear Selections Immediately When Route Changes
 
 **File:** `HomePageCarrier.swift`
-**Function:** `onDeleteRoute` closure in `HomePageRouteSheet`
+
+#### Fix 1: Route Deletion (onDeleteRoute closure)
 
 **Before:**
 ```swift
 onDeleteRoute: {
     routeCoordinates = []
     startCoordinate = nil
-    startLocation = ""
-    destinationLocation = ""
-    routeDistance = 0
+    // ... other cleanup ...
     useSecondaryPOIs = false
     routeColor = Colors.primary.hexString()
     showRouteSheet = false
     
-    // Preview routes were NOT cleared ❌
-    print("🗑️ Route deleted")
+    // Selections were NOT cleared ❌
+    // This caused POIs to briefly show as active
+    
+    clearNonBookmarkedPreviewRoutes()
+    
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        self.fetchAllPreviewRoutes()
+        self.fetchAllBookmarkedRoutes()
+    }
 }
 ```
 
@@ -64,45 +77,88 @@ onDeleteRoute: {
 onDeleteRoute: {
     routeCoordinates = []
     startCoordinate = nil
-    startLocation = ""
-    destinationLocation = ""
-    routeDistance = 0
+    // ... other cleanup ...
     useSecondaryPOIs = false
     routeColor = Colors.primary.hexString()
     showRouteSheet = false
     
-    // Clear preview routes for non-bookmarked shipments ✅
-    // This removes POIs that were only visible along the route
-    clearNonBookmarkedPreviewRoutes()
-    print("🧹 Cleared non-bookmarked preview routes")
+    // Clear all selections immediately ✅
+    selectedShipments.removeAll()
+    selectionOrder.removeAll()
+    shipmentRoutes.removeAll()
+    selectedShipmentId = nil
     
-    // Regenerate preview routes for shipments within range ✅
+    clearNonBookmarkedPreviewRoutes()
+    print("🧹 Cleared non-bookmarked preview routes and selections")
+    
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-        print("🔄 Regenerating preview routes for shipments within range")
         self.fetchAllPreviewRoutes()
         self.fetchAllBookmarkedRoutes()
     }
-    
-    print("🗑️ Route deleted")
 }
+```
+
+#### Fix 2: New Route Creation (onRouteCalculated callback)
+
+**Before:**
+```swift
+AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
+    // Selections were NOT cleared ❌
+    // Old selected POIs remained active briefly
+    
+    self.routeCoordinates = routeCoordinates
+    self.startCoordinate = startCoordinate
+    self.routeColor = Colors.secondary.hexString()
+    // ... rest of setup ...
+})
+```
+
+**After:**
+```swift
+AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
+    // Clear all selections immediately ✅
+    self.selectedShipments.removeAll()
+    self.selectionOrder.removeAll()
+    self.shipmentRoutes.removeAll()
+    self.selectedShipmentId = nil
+    
+    self.routeCoordinates = routeCoordinates
+    self.startCoordinate = startCoordinate
+    self.routeColor = Colors.secondary.hexString()
+    // ... rest of setup ...
+})
 ```
 
 ## How It Works
 
 ### After Route Deletion:
 1. **Route cleared** - `routeCoordinates = []`
-2. **Old preview routes cleared** - `clearNonBookmarkedPreviewRoutes()`
+2. **Selections cleared immediately** - `selectedShipments.removeAll()` ✅ **NEW!**
+   - Prevents POIs from briefly showing as active
+   - Removes selected routes from memory
+3. **Old preview routes cleared** - `clearNonBookmarkedPreviewRoutes()`
    - Removes POIs that were only visible along the route
    - Keeps bookmarked POIs
-3. **App switches to range filter** - Shows shipments within 200 km
-4. **0.3 second delay** - Allows UI to settle
-5. **Preview routes regenerated for range filter**:
+4. **App switches to range filter** - Shows shipments within 200 km
+5. **0.3 second delay** - Allows UI to settle
+6. **Preview routes regenerated for range filter**:
    - `fetchAllPreviewRoutes()` - Fetches routes for shipments within range
    - `fetchAllBookmarkedRoutes()` - Fetches routes for bookmarked shipments
-6. **POIs appear with correct styling**:
+7. **POIs appear with correct styling**:
    - Regular shipments (within range) → Tertiary POIs (gray) ✅
    - Bookmarked shipments → Primary POIs (yellow) ✅
    - Shipments outside range → Not visible ✅
+   - **No yellow flash** → Selections cleared immediately ✅
+
+### After New Route Creation:
+1. **Selections cleared immediately** - Prevents flash ✅ **NEW!**
+2. **New route set** - `routeCoordinates`, `startCoordinate`, etc.
+3. **Secondary POIs enabled** - For the new route
+4. **Old preview routes cleared** - Non-bookmarked ones
+5. **Route sheet shown** - Display new route details
+6. **POIs appear correctly**:
+   - No brief yellow flash ✅
+   - All POIs render as tertiary (gray) unless bookmarked ✅
 
 ### POI Layer Architecture
 
@@ -135,20 +191,39 @@ When preview routes are present, POIs use the route-specific layers (2-4) which 
 ### Before Fix ❌
 1. User sets up trip route from Philadelphia to Washington
 2. POIs near route appear (e.g., in Maryland, Virginia)
-3. User closes route (X button)
-4. **POIs along route stay visible** (Maryland, Virginia) - WRONG!
-5. User is in Philadelphia, those POIs are outside 200 km range
-6. POIs should disappear but they don't
+3. User taps some POIs (they turn yellow/active)
+4. User closes route (X button)
+5. **POIs briefly flash yellow/active** - WRONG! ❌
+6. After 0.3s, POIs turn gray/tertiary
+7. Confusing flash disrupts user experience
+
+**OR**
+
+1. User taps some POIs (they turn yellow/active)
+2. User creates new route from AddressInputPage
+3. **POIs briefly flash yellow/active** - WRONG! ❌
+4. POIs that were along new route appear
+5. Selected POIs stay yellow briefly before turning gray
 
 ### After Fix ✅
 1. User sets up trip route from Philadelphia to Washington
 2. POIs near route appear (e.g., in Maryland, Virginia)
-3. User closes route (X button)
-4. **Old preview routes cleared immediately**
-5. **Brief delay (0.3s)** - Almost imperceptible
-6. **New preview routes fetched for range filter**
-7. **Only POIs within 200 km of Philadelphia remain visible** - CORRECT!
-8. Bookmarked POIs remain visible regardless of distance
+3. User taps some POIs (they turn yellow/active)
+4. User closes route (X button)
+5. **Selections cleared immediately** - No flash! ✅
+6. **Brief delay (0.3s)** - Almost imperceptible
+7. **New preview routes fetched for range filter**
+8. **Only POIs within 200 km of Philadelphia remain visible** - All gray (tertiary) ✅
+9. Smooth transition, no confusing flash
+
+**OR**
+
+1. User taps some POIs (they turn yellow/active)
+2. User creates new route from AddressInputPage
+3. **Selections cleared immediately** - No flash! ✅
+4. New route appears with POIs along it
+5. All POIs render as gray (tertiary) - CORRECT! ✅
+6. Only bookmarked POIs remain yellow/active
 
 ## Testing
 
@@ -216,19 +291,23 @@ fetchAllBookmarkedRoutes()
 
 | Aspect | Before | After |
 |--------|--------|-------|
-| POIs after route deletion | Stay visible along route ❌ | Only within range visible ✅ |
-| POI styling | Incorrect (active/primary) ❌ | Correct (tertiary/gray) ✅ |
-| Old preview routes | Not cleared ❌ | Cleared immediately ✅ |
+| POIs flash yellow on route deletion | Yes ❌ | No ✅ |
+| POIs flash yellow on new route creation | Yes ❌ | No ✅ |
+| Selections cleared immediately | No ❌ | Yes ✅ |
+| POI styling after route changes | Briefly wrong ❌ | Always correct ✅ |
+| Old preview routes | Not cleared properly ❌ | Cleared immediately ✅ |
 | New preview routes | Not regenerated ❌ | Regenerated for range filter ✅ |
 | Bookmarked POIs | Correct (primary) ✅ | Correct (primary) ✅ |
-| User experience | Confusing ❌ | Clear ✅ |
+| User experience | Confusing flash ❌ | Smooth, no flash ✅ |
 
 ## Status
 
+✅ **FIXED** - Selections are cleared immediately when routes change
+✅ **FIXED** - No more yellow flash when closing or creating routes
 ✅ **FIXED** - Old preview routes are cleared when route is deleted
 ✅ **FIXED** - New preview routes are regenerated for range-based filtering
 ✅ **FIXED** - POIs outside range no longer stay visible after route deletion
-✅ **VERIFIED** - POIs appear as "not active" (tertiary/gray) after route deletion
+✅ **VERIFIED** - POIs appear as "not active" (tertiary/gray) without flash
 ✅ **VERIFIED** - Bookmarked POIs remain active (primary/yellow)
 ✅ **TESTED** - No visual glitches, smooth transition
 
