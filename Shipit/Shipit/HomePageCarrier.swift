@@ -591,8 +591,16 @@ struct HomeContentCarrierView: View {
                                 // Bookmarked routes go to bookmarkedRoutes (primary color, 2px)
                                 bookmarkedRoutes[shipmentId] = route
                             } else {
-                                // Regular routes go to previewRoutes (tertiary color, thin)
-                                previewRoutes[shipmentId] = route
+                                // Only add to preview routes if the shipment is within range
+                                // If not within range and not bookmarked, it should disappear
+                                if let shipment = shipments.first(where: { $0.id == shipmentId }),
+                                   isWithinRange(shipment: shipment) {
+                                    // Regular routes go to previewRoutes (tertiary color, thin)
+                                    previewRoutes[shipmentId] = route
+                                    print("   ✅ POI \(shipmentId) moved to preview routes (within range)")
+                                } else {
+                                    print("   🚫 POI \(shipmentId) hidden (outside range and not bookmarked)")
+                                }
                             }
                         }
                         
