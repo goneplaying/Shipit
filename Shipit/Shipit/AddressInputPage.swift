@@ -29,7 +29,7 @@ struct AddressInputPage: View {
             VStack(spacing: 12) {
                 // From input field
                 AddressInputField(
-                    placeholder: "Enter pickup address",
+                    placeholder: "Choose starting point",
                     text: $fromAddress,
                     leftIcon: IconHelper.location,
                     showRightIcon: true,
@@ -122,6 +122,12 @@ struct AddressInputPage: View {
             // Update from address with "Your location" when location is available
             if fromAddress.isEmpty, newValue != nil {
                 fromAddress = "Your location"
+            }
+        }
+        .onChange(of: focusedField) { oldValue, newValue in
+            // Clear from address when tapping on the "from" field
+            if newValue == .from && oldValue != .from && !fromAddress.isEmpty {
+                fromAddress = ""
             }
         }
     }
@@ -489,6 +495,6 @@ struct AddressInputField: View {
 
 #Preview {
     NavigationStack {
-        AddressInputPage()
+        AddressInputPage(onRouteCalculated: nil)
     }
 }

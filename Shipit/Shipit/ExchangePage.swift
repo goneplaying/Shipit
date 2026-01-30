@@ -504,8 +504,8 @@ struct ExchangePage: View {
         }
         
         guard let referenceLocation = referenceLocation else {
-            // If no reference location, show all (or could return false to hide all)
-            return true
+            // Don't show shipments if reference location is not available yet
+            return false
         }
         
         // Get pickup location coordinate (use cache if available)
@@ -513,13 +513,14 @@ struct ExchangePage: View {
         if let cached = pickupCoordinates[shipment.id] {
             pickupCoord = cached
         } else {
-            // Geocode pickup location (async, will be cached on next check)
+            // Start geocoding in background, but don't show until ready
             geocodePickupLocation(shipment: shipment)
-            return true // Show for now, will be filtered on next update
+            return false
         }
         
         guard let pickupCoord = pickupCoord else {
-            return true // Show if geocoding fails
+            // Don't show shipments without valid pickup coordinates
+            return false
         }
         
         // Calculate distance in kilometers

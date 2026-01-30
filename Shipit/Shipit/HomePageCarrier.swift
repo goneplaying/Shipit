@@ -643,8 +643,18 @@ struct HomeContentCarrierView: View {
                         showRouteSheet = false
                         
                         // Clear preview routes for non-bookmarked shipments
+                        // This removes POIs that were only visible along the route
                         clearNonBookmarkedPreviewRoutes()
-                        print("🗑️ Route deleted and non-bookmarked preview routes cleared")
+                        print("🧹 Cleared non-bookmarked preview routes")
+                        
+                        // Regenerate preview routes for shipments within range after a brief delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            print("🔄 Regenerating preview routes for shipments within range")
+                            self.fetchAllPreviewRoutes()
+                            self.fetchAllBookmarkedRoutes()
+                        }
+                        
+                        print("🗑️ Route deleted")
                     }
                 )
                 .frame(height: 122)
@@ -687,10 +697,26 @@ struct HomeContentCarrierView: View {
     }
     
     var body: some View {
-        contentWithModifiers
+        baseView
+            .navigationDestination(isPresented: $showNewRequestPage) {
+                NewRequestPage()
+            }
+            .navigationDestination(isPresented: $showPreferencesPage) {
+                ExchangePreferencesPage()
+            }
+            .onChange(of: showPreferencesPage) { oldValue, newValue in
+                handlePreferencesChange(oldValue: oldValue, newValue: newValue)
+            }
+            .onChange(of: routeCoordinates) { oldValue, newValue in
+                handleRouteChange(oldValue: oldValue, newValue: newValue)
+            }
+            .navigationDestination(isPresented: $showAddressInput, destination: addressInputDestination)
+            .onChange(of: showAddressInput) { oldValue, newValue in
+                handleAddressInputDismiss(oldValue: oldValue, newValue: newValue)
+            }
     }
     
-    private var contentWithModifiers: some View {
+    private var baseView: some View {
         mainContent
         .fullScreenCover(isPresented: $showHomePageShipper) {
             HomePageShipper()
@@ -755,75 +781,76 @@ struct HomeContentCarrierView: View {
             // Cancel pending tasks to free memory (keeps routes and coordinates)
             clearMemoryCache()
         }
-        .navigationDestination(isPresented: $showNewRequestPage) {
-            NewRequestPage()
-        }
-        .navigationDestination(isPresented: $showPreferencesPage) {
-            ExchangePreferencesPage()
-        }
-        .onChange(of: showPreferencesPage) { oldValue, newValue in
-            if newValue {
-                // Preferences opened - set flag to use cached results
-                isPreferencesOpen = true
-            } else if oldValue && !newValue {
-                // Preferences closed - recalculate and update cache
-                isPreferencesOpen = false
-                // Update cache after preferences close
-                DispatchQueue.main.async {
-                    self.updateFilterCache()
-                }
+    }
+    
+    // MARK: - Navigation Handlers
+    
+    private func handlePreferencesChange(oldValue: Bool, newValue: Bool) {
+        if newValue {
+            // Preferences opened - set flag to use cached results
+            isPreferencesOpen = true
+        } else if oldValue && !newValue {
+            // Preferences closed - recalculate and update cache
+            isPreferencesOpen = false
+            // Update cache after preferences close
+            DispatchQueue.main.async {
+                self.updateFilterCache()
             }
         }
-        .onChange(of: routeCoordinates) { oldValue, newValue in
-            // Update cache when route changes (but not while preferences are open)
-            if !isPreferencesOpen {
-                DispatchQueue.main.async {
-                    self.updateFilterCache()
-                }
+    }
+    
+    private func handleRouteChange(oldValue: [CLLocationCoordinate2D], newValue: [CLLocationCoordinate2D]) {
+        // Update cache when route changes (but not while preferences are open)
+        if !isPreferencesOpen {
+            DispatchQueue.main.async {
+                self.updateFilterCache()
             }
         }
-        .navigationDestination(isPresented: $showAddressInput) {
-            AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
-                print("🗺️ onRouteCalculated callback - Setting route with \(routeCoordinates.count) points")
-                print("   📍 Start coordinate: (\(startCoordinate.latitude), \(startCoordinate.longitude))")
-                print("   📏 Distance: \(String(format: "%.1f", distance)) km")
-                
-                // Set route coordinates, start coordinate, and color
-                self.routeCoordinates = routeCoordinates
-                self.startCoordinate = startCoordinate
-                self.routeColor = Colors.secondary.hexString()
-                
-                // Store city names and distance
-                self.startLocation = fromCity
-                self.destinationLocation = toCity
-                self.routeDistance = distance
-                
-                // IMPORTANT: Set this flag to ensure secondary POIs are used
-                self.useSecondaryPOIs = true
-                
-                // Clear preview routes for non-bookmarked shipments
-                self.clearNonBookmarkedPreviewRoutes()
-                print("   🧹 Cleared non-bookmarked preview routes")
-                
-                // Show route sheet
-                self.showRouteSheet = true
-                
-                print("   ✅ Set routeCoordinates, startCoordinate, routeColor, and useSecondaryPOIs = true")
-                
-                // Focus map on the route with some zoom out (after route is set)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    print("   📍 Focusing map on route")
-                    self.focusMapOnRoute(routeCoordinates)
-                }
-            })
-        }
-        .onChange(of: showAddressInput) { oldValue, newValue in
-            // When AddressInputPage is dismissed, reset flag if route is cleared
-            if oldValue == true && newValue == false && routeCoordinates.isEmpty {
-                useSecondaryPOIs = false
-                startCoordinate = nil
-                routeColor = Colors.primary.hexString()
+    }
+    
+    @ViewBuilder
+    private func addressInputDestination() -> some View {
+        AddressInputPage(onRouteCalculated: { routeCoordinates, startCoordinate, fromCity, toCity, distance in
+            print("🗺️ onRouteCalculated callback - Setting route with \(routeCoordinates.count) points")
+            print("   📍 Start coordinate: (\(startCoordinate.latitude), \(startCoordinate.longitude))")
+            print("   📏 Distance: \(String(format: "%.1f", distance)) km")
+            
+            // Set route coordinates, start coordinate, and color
+            self.routeCoordinates = routeCoordinates
+            self.startCoordinate = startCoordinate
+            self.routeColor = Colors.secondary.hexString()
+            
+            // Store city names and distance
+            self.startLocation = fromCity
+            self.destinationLocation = toCity
+            self.routeDistance = distance
+            
+            // IMPORTANT: Set this flag to ensure secondary POIs are used
+            self.useSecondaryPOIs = true
+            
+            // Clear preview routes for non-bookmarked shipments
+            self.clearNonBookmarkedPreviewRoutes()
+            print("   🧹 Cleared non-bookmarked preview routes")
+            
+            // Show route sheet
+            self.showRouteSheet = true
+            
+            print("   ✅ Set routeCoordinates, startCoordinate, routeColor, and useSecondaryPOIs = true")
+            
+            // Focus map on the route with some zoom out (after route is set)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                print("   📍 Focusing map on route")
+                self.focusMapOnRoute(routeCoordinates)
             }
+        })
+    }
+    
+    private func handleAddressInputDismiss(oldValue: Bool, newValue: Bool) {
+        // When AddressInputPage is dismissed, reset flag if route is cleared
+        if oldValue == true && newValue == false && routeCoordinates.isEmpty {
+            useSecondaryPOIs = false
+            startCoordinate = nil
+            routeColor = Colors.primary.hexString()
         }
     }
     
@@ -1222,19 +1249,22 @@ struct HomeContentCarrierView: View {
         }
         
         guard let referenceLocation = referenceLocation else {
-            return true
+            // Don't show shipments if reference location is not available yet
+            return false
         }
         
         let pickupCoord: CLLocationCoordinate2D?
         if let cached = pickupCoordinates[shipment.id] {
             pickupCoord = cached
         } else {
+            // Start geocoding in background, but don't show until ready
             geocodePickupLocation(shipment: shipment)
-            return true
+            return false
         }
         
         guard let pickupCoord = pickupCoord else {
-            return true
+            // Don't show shipments without valid pickup coordinates
+            return false
         }
         
         let distance = calculateDistance(from: referenceLocation, to: pickupCoord)

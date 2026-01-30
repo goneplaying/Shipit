@@ -60,7 +60,7 @@ class FilterSettingsManager: ObservableObject {
     @Published var locationSource: LocationSource? = .device
     @Published var useRange: Bool = true
     @Published var useOwnLocation: Bool = true
-    @Published var sliderValue: Double = 50
+    @Published var sliderValue: Double = 200
     @Published var selectedCity: String = ""
     @Published var selectedCityCoordinate: CLLocationCoordinate2D?
     @Published var requestWithNoOfferOnly: Bool = false
@@ -138,7 +138,7 @@ class FilterSettingsManager: ObservableObject {
             
             useRange = settings["useRange"] as? Bool ?? true
             useOwnLocation = settings["useOwnLocation"] as? Bool ?? true
-            sliderValue = settings["sliderValue"] as? Double ?? 50
+            sliderValue = settings["sliderValue"] as? Double ?? 200
             selectedCity = settings["selectedCity"] as? String ?? ""
             requestWithNoOfferOnly = settings["requestWithNoOfferOnly"] as? Bool ?? false
             

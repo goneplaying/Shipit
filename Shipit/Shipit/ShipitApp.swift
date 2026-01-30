@@ -27,9 +27,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         UIView.appearance().tintColor = Colors.secondaryUIColor
         UIWindow.appearance().tintColor = Colors.secondaryUIColor
         
-        // Load shipment data at app startup
-        ShipmentDataManager.shared.loadData()
-        print("✅ Shipment data loading started at app launch")
+        // Preload keyboard and input system early
+        DispatchQueue.main.async {
+            // This forces the keyboard framework to load early
+            let _ = UITextChecker()
+            print("⌨️ [DEBUG] AppDelegate: Keyboard system preloaded")
+        }
+        
+        // Load shipment data at app startup (background thread to not block)
+        DispatchQueue.global(qos: .userInitiated).async {
+            ShipmentDataManager.shared.loadData()
+            print("✅ Shipment data loading started at app launch (background)")
+        }
+        
+        // Initialize location manager early (if needed)
+        DispatchQueue.main.async {
+            _ = LocationManager.shared
+            print("📍 [DEBUG] AppDelegate: Location manager initialized early")
+        }
         
         print("✅ [DEBUG] Supabase will be used for authentication and database")
         

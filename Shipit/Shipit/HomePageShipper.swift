@@ -393,19 +393,22 @@ struct HomeContentView: View {
         }
         
         guard let referenceLocation = referenceLocation else {
-            return true
+            // Don't show shipments if reference location is not available yet
+            return false
         }
         
         let pickupCoord: CLLocationCoordinate2D?
         if let cached = pickupCoordinates[shipment.id] {
             pickupCoord = cached
         } else {
+            // Start geocoding in background, but don't show until ready
             geocodePickupLocation(shipment: shipment)
-            return true
+            return false
         }
         
         guard let pickupCoord = pickupCoord else {
-            return true
+            // Don't show shipments without valid pickup coordinates
+            return false
         }
         
         let distance = calculateDistance(from: referenceLocation, to: pickupCoord)
