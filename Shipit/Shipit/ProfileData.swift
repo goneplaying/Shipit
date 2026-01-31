@@ -75,6 +75,26 @@ class ProfileData: ObservableObject {
             let email: String
             let userType: Int
             let updatedAt: Date
+            
+            enum CodingKeys: String, CodingKey {
+                case id
+                case selectedTab = "selected_tab"
+                case firstName = "first_name"
+                case lastName = "last_name"
+                case companyName = "company_name"
+                case nip
+                case selectedCountry = "selected_country"
+                case streetAndNumber = "street_and_number"
+                case apartmentUnit = "apartment_unit"
+                case postalCode = "postal_code"
+                case city
+                case regionState = "region_state"
+                case phonePrefix = "phone_prefix"
+                case phoneNumber = "phone_number"
+                case email
+                case userType = "usertype"
+                case updatedAt = "updated_at"
+            }
         }
         
         let profileRecord = ProfileRecord(
@@ -143,6 +163,25 @@ class ProfileData: ObservableObject {
             let phoneNumber: String?
             let email: String?
             let userType: Int?
+            
+            enum CodingKeys: String, CodingKey {
+                case id
+                case selectedTab = "selected_tab"
+                case firstName = "first_name"
+                case lastName = "last_name"
+                case companyName = "company_name"
+                case nip
+                case selectedCountry = "selected_country"
+                case streetAndNumber = "street_and_number"
+                case apartmentUnit = "apartment_unit"
+                case postalCode = "postal_code"
+                case city
+                case regionState = "region_state"
+                case phonePrefix = "phone_prefix"
+                case phoneNumber = "phone_number"
+                case email
+                case userType = "usertype"
+            }
         }
         
         let response: [ProfileRecord] = try await SupabaseAuthService.shared.client

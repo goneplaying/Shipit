@@ -3,6 +3,7 @@
 //  Shipit
 //
 //  Created by Christopher Wirkus on 30.12.2025.
+//  Updated for Supabase: 30.01.2026
 //
 
 import Foundation
@@ -15,6 +16,9 @@ class ShipmentDataManager: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var lastUpdateDate: Date?
     
+    // Migration flag: Set to true to use Supabase, false to use Google Sheets
+    private let useSupabase = true
+    
     private let spreadsheetId = "1W52gwfN0gX64LNt3bE_vBFG87tM3XBYAuxyaA5jUExU"
     private let tripColorSpreadsheetId = "16Vyn1tjACIjvOBt1J5M5QeIsC5VsDOF2FDRCHfW00vU"
     private let userDefaultsKey = "cachedShipments"
@@ -22,15 +26,65 @@ class ShipmentDataManager: ObservableObject {
     private let tripColorMapKey = "cachedTripColorMap"
     private let iconMapKey = "cachedIconMap"
     
+    private var supabaseService: SupabaseShipmentService?
+    
     private init() {
-        // Load cached data first
-        loadCachedData()
-        // Load tripColor and icon data from cache first, then update from spreadsheet
-        loadCachedTripColorData()
-        loadTripColorData() // This will update the cache in the background
+        if useSupabase {
+            // Supabase mode: Initialize service on main actor
+            Task { @MainActor in
+                supabaseService = SupabaseShipmentService.shared
+            }
+        } else {
+            // Google Sheets mode: Load cached data first
+            loadCachedData()
+            // Load tripColor and icon data from cache first, then update from spreadsheet
+            loadCachedTripColorData()
+            loadTripColorData() // This will update the cache in the background
+        }
     }
     
     func loadData() {
+        if useSupabase {
+            loadFromSupabase()
+        } else {
+            loadFromGoogleSheets()
+        }
+    }
+    
+    /// Load shipments from Supabase (on-demand)
+    private func loadFromSupabase() {
+        guard !isLoading else { return }
+        
+        guard let service = supabaseService else {
+            print("❌ SupabaseShipmentService not initialized yet")
+            return
+        }
+        
+        Task { @MainActor in
+            isLoading = true
+            
+            do {
+                print("🔄 Fetching shipments from Supabase...")
+                try await service.fetchShipments()
+                
+                // Copy data once (no live binding)
+                shipments = service.shipments
+                lastUpdateDate = Date()
+                
+                print("✅ Loaded \(shipments.count) shipments from Supabase")
+                
+                // Start preloading locations in background
+                LocationCacheManager.shared.preloadLocations(for: shipments)
+            } catch {
+                print("❌ Error loading from Supabase: \(error.localizedDescription)")
+            }
+            
+            isLoading = false
+        }
+    }
+    
+    /// Load shipments from Google Sheets (original method)
+    private func loadFromGoogleSheets() {
         guard !isLoading else { return }
         isLoading = true
         
@@ -742,5 +796,56 @@ class ShipmentDataManager: ObservableObject {
         
         UserDefaults.standard.synchronize()
         print("💾 Saved tripColor and icon mappings to cache")
+    }
+    
+    // MARK: - Supabase CRUD Operations
+    
+    /// Create a new shipment (Supabase only)
+    func createShipment(_ shipment: ShipmentData) async throws -> ShipmentData {
+        guard useSupabase else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Create operation only available in Supabase mode"])
+        }
+        
+        guard let service = supabaseService else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Supabase service not initialized"])
+        }
+        
+        let createdShipment = try await service.createShipment(shipment)
+        print("✅ Created shipment: \(createdShipment.id)")
+        return createdShipment
+    }
+    
+    /// Update an existing shipment (Supabase only)
+    func updateShipment(_ shipment: ShipmentData) async throws {
+        guard useSupabase else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Update operation only available in Supabase mode"])
+        }
+        
+        guard let service = supabaseService else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Supabase service not initialized"])
+        }
+        
+        try await service.updateShipment(shipment)
+        print("✅ Updated shipment: \(shipment.id)")
+    }
+    
+    /// Delete a shipment (Supabase only)
+    func deleteShipment(_ shipmentId: String) async throws {
+        guard useSupabase else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Delete operation only available in Supabase mode"])
+        }
+        
+        guard let service = supabaseService else {
+            throw NSError(domain: "ShipmentDataManager", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "Supabase service not initialized"])
+        }
+        
+        try await service.deleteShipment(shipmentId)
+        print("✅ Deleted shipment: \(shipmentId)")
     }
 }

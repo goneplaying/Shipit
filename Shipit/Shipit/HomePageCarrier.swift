@@ -235,6 +235,7 @@ struct HomeContentCarrierView: View {
     @State private var shipmentRoutes: [String: [CLLocationCoordinate2D]] = [:] // Store routes per shipment
     @State private var previewRoutes: [String: [CLLocationCoordinate2D]] = [:] // Store preview routes for all POIs (thin lines)
     @State private var bookmarkedRoutes: [String: [CLLocationCoordinate2D]] = [:] // Store routes for bookmarked shipments
+    @State private var previouslyVisibleShipments: Set<String> = [] // Track shipments that had preview/bookmarked routes before selection
     @State private var pendingGeocodeTasks: [String: URLSessionDataTask] = [:]
     @State private var pendingRouteTasks: [String: URLSessionDataTask] = [:] // Keyed by shipmentId
     @State private var hasInitializedRoute = false
@@ -586,31 +587,55 @@ struct HomeContentCarrierView: View {
                         handleRemoveShipment(shipmentId: shipmentId)
                     },
                     onDismiss: {
+                        print("📋 Selection sheet dismissed - processing route transitions")
+                        print("   Selected shipments: \(selectedShipments.sorted())")
+                        print("   Shipment routes: \(shipmentRoutes.keys.sorted())")
+                        print("   Before - Preview routes: \(previewRoutes.keys.sorted())")
+                        print("   Before - Bookmarked routes: \(bookmarkedRoutes.keys.sorted())")
+                        
                         // Move selected routes back to appropriate collections
                         for (shipmentId, route) in shipmentRoutes {
-                            if watchedManager.isWatched(requestId: shipmentId) {
+                            let isBookmarked = watchedManager.isWatched(requestId: shipmentId)
+                            let wasPreviouslyVisible = previouslyVisibleShipments.contains(shipmentId)
+                            print("   Processing \(shipmentId) - Bookmarked: \(isBookmarked), Was previously visible: \(wasPreviouslyVisible)")
+                            
+                            if isBookmarked {
                                 // Bookmarked routes go to bookmarkedRoutes (primary color, 2px)
                                 bookmarkedRoutes[shipmentId] = route
+                                print("      ➡️ Moved to bookmarked routes")
                             } else {
-                                // Only add to preview routes if the shipment is within range
-                                // If not within range and not bookmarked, it should disappear
-                                if let shipment = shipments.first(where: { $0.id == shipmentId }),
-                                   isWithinRange(shipment: shipment) {
+                                // If it was previously visible OR within range, add to preview routes
+                                // This ensures that if user clicked a POI, it stays visible after un-bookmarking
+                                let shouldShowPreview = wasPreviouslyVisible || (
+                                    shipments.first(where: { $0.id == shipmentId }).map { isWithinRange(shipment: $0) } ?? false
+                                )
+                                
+                                if shouldShowPreview {
                                     // Regular routes go to previewRoutes (tertiary color, thin)
                                     previewRoutes[shipmentId] = route
-                                    print("   ✅ POI \(shipmentId) moved to preview routes (within range)")
+                                    print("      ➡️ Moved to preview routes (was visible: \(wasPreviouslyVisible))")
                                 } else {
-                                    print("   🚫 POI \(shipmentId) hidden (outside range and not bookmarked)")
+                                    print("      🚫 Hidden (not previously visible and outside range)")
                                 }
                             }
                         }
                         
+                        print("   After - Preview routes: \(previewRoutes.keys.sorted())")
+                        print("   After - Bookmarked routes: \(bookmarkedRoutes.keys.sorted())")
+                        
                         // Clear all selections
                         selectedShipments.removeAll()
                         selectionOrder.removeAll()
-                        showSelectionSheet = false
                         shipmentRoutes.removeAll()
                         selectedShipmentId = nil
+                        previouslyVisibleShipments.removeAll() // Clear tracking set
+                        
+                        print("   Cleared selections - multipleRoutes count: \(multipleRoutes.count)")
+                        
+                        // Force view update to ensure POI markers refresh
+                        DispatchQueue.main.async {
+                            showSelectionSheet = false
+                        }
                     }
                 )
                 .environmentObject(authService)
@@ -669,12 +694,12 @@ struct HomeContentCarrierView: View {
                         print("🗑️ Route deleted")
                     }
                 )
-                .frame(height: 122)
+                .frame(height: 138)
                 .background(Color.white)
                 .cornerRadius(20, corners: [.topLeft, .topRight])
                 .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: -1)
             }
-            .offset(y: 304)
+            .offset(y: 314)
             .ignoresSafeArea(edges: .bottom)
             .animation(nil, value: editingRoute)
         }
@@ -823,6 +848,47 @@ struct HomeContentCarrierView: View {
         }
         .onChange(of: filterSettings.useRange) { _, _ in
             geocodeAllPickupLocations()
+        }
+        .onChange(of: watchedManager.watchedRequestIds) { oldValue, newValue in
+            // When bookmark status changes, immediately update route collections
+            print("🔖 Bookmark state changed - updating route collections")
+            
+            // Find which shipment was bookmarked or unbookmarked
+            let added = newValue.subtracting(oldValue)
+            let removed = oldValue.subtracting(newValue)
+            
+            // Handle newly bookmarked shipments
+            for shipmentId in added {
+                // Move from preview routes to bookmarked routes
+                if let route = previewRoutes[shipmentId] {
+                    print("   ➡️ Moving \(shipmentId) from preview to bookmarked")
+                    bookmarkedRoutes[shipmentId] = route
+                    previewRoutes.removeValue(forKey: shipmentId)
+                }
+            }
+            
+            // Handle newly unbookmarked shipments
+            for shipmentId in removed {
+                // Move from bookmarked routes to preview routes (only if within range and not selected)
+                if let route = bookmarkedRoutes[shipmentId] {
+                    print("   ➡️ Moving \(shipmentId) from bookmarked to preview")
+                    
+                    // Only show in preview if within range and not currently selected
+                    if !selectedShipments.contains(shipmentId) {
+                        if let shipment = shipments.first(where: { $0.id == shipmentId }),
+                           isWithinRange(shipment: shipment) {
+                            previewRoutes[shipmentId] = route
+                            print("      ✅ Added to preview routes (within range)")
+                        } else {
+                            print("      🚫 Removed from map (outside range)")
+                        }
+                    } else {
+                        print("      ⏸️ Keeping in selected state")
+                    }
+                    
+                    bookmarkedRoutes.removeValue(forKey: shipmentId)
+                }
+            }
         }
         .onDisappear {
             locationManager.stopUpdatingLocation()
@@ -1471,6 +1537,14 @@ struct HomeContentCarrierView: View {
             
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 selectedShipments.insert(shipment.id)
+                
+                // Remember if this shipment had a preview or bookmarked route before selection
+                let hadPreviewRoute = previewRoutes[shipment.id] != nil
+                let hadBookmarkedRoute = bookmarkedRoutes[shipment.id] != nil
+                if hadPreviewRoute || hadBookmarkedRoute {
+                    previouslyVisibleShipments.insert(shipment.id)
+                    print("   📝 Remembering \(shipment.id) was previously visible (preview: \(hadPreviewRoute), bookmarked: \(hadBookmarkedRoute))")
+                }
                 
                 // Remove preview route or bookmarked route for this shipment (it will be replaced with main route)
                 previewRoutes.removeValue(forKey: shipment.id)
